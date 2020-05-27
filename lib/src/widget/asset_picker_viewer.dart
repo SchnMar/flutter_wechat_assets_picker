@@ -12,13 +12,13 @@ import 'package:flutter/services.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:wechat_assets_picker/src/widget/builder/audio_page_builder.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
 import '../constants/constants.dart';
 import 'builder/fade_image_builder.dart';
 import 'builder/image_page_builder.dart';
 import 'builder/video_page_builder.dart';
-import 'platform_progress_indicator.dart';
 import 'rounded_check_box.dart';
 
 class AssetPickerViewer extends StatefulWidget {
@@ -29,7 +29,6 @@ class AssetPickerViewer extends StatefulWidget {
     @required this.themeData,
     this.selectedAssets,
     this.selectorProvider,
-    this.textDelegate,
   }) : super(key: key);
 
   /// Current previewing index in assets.
@@ -52,39 +51,38 @@ class AssetPickerViewer extends StatefulWidget {
   /// 主题
   final ThemeData themeData;
 
-  /// [TextDelegate] that the viewer would use.
-  /// 预览部件会使用的文本构建
-  final TextDelegate textDelegate;
-
   @override
   AssetPickerViewerState createState() => AssetPickerViewerState();
 
   /// Static method to push with navigator.
   /// 跳转至选择预览的静态方法
   static Future<List<AssetEntity>> pushToViewer(
-      BuildContext context, {
-        int currentIndex = 0,
-        @required List<AssetEntity> assets,
-        @required ThemeData themeData,
-        List<AssetEntity> selectedAssets,
-        AssetPickerProvider selectorProvider,
-        TextDelegate textDelegate,
-      }) async {
-    final WidgetBuilder viewer = (BuildContext _) => AssetPickerViewer(
-      currentIndex: currentIndex,
-      assets: assets,
-      themeData: themeData,
-      selectedAssets: selectedAssets,
-      selectorProvider: selectorProvider,
-      textDelegate: textDelegate,
-    );
-    final List<AssetEntity> result =
-    await Navigator.of(context).push<List<AssetEntity>>(
-      Platform.isAndroid
-          ? MaterialPageRoute<List<AssetEntity>>(builder: viewer)
-          : CupertinoPageRoute<List<AssetEntity>>(builder: viewer),
-    );
-    return result;
+    BuildContext context, {
+    int currentIndex = 0,
+    @required List<AssetEntity> assets,
+    @required ThemeData themeData,
+    List<AssetEntity> selectedAssets,
+    AssetPickerProvider selectorProvider,
+  }) async {
+    try {
+      final WidgetBuilder viewer = (BuildContext _) => AssetPickerViewer(
+            currentIndex: currentIndex,
+            assets: assets,
+            themeData: themeData,
+            selectedAssets: selectedAssets,
+            selectorProvider: selectorProvider,
+          );
+      final List<AssetEntity> result =
+          await Navigator.of(context).push<List<AssetEntity>>(
+        Platform.isAndroid
+            ? MaterialPageRoute<List<AssetEntity>>(builder: viewer)
+            : CupertinoPageRoute<List<AssetEntity>>(builder: viewer),
+      );
+      return result;
+    } catch (e) {
+      realDebugPrint('Error when calling assets picker viewer: $e');
+      return null;
+    }
   }
 }
 
@@ -98,7 +96,7 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// 使用 [StreamController] 的主要目的是缩小页码变化时构建组件的范围，
   /// 防止滥用 [setState] 导致其他部件重新构建。
   final StreamController<int> pageStreamController =
-  StreamController<int>.broadcast();
+      StreamController<int>.broadcast();
 
   /// [AnimationController] for double tap animation.
   /// 双击缩放的动画控制器
@@ -132,10 +130,6 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// 详情部件是否显示
   bool isDisplayingDetail = true;
 
-  /// Whether the [PageView] can switch between pages. Provide for video play.
-  /// 是否允许[PageView]切换页面，用于播放视频时设置。
-  bool isAllowSwitchPage = true;
-
   /// Getter for current asset.
   /// 当前资源的Getter
   AssetEntity get currentAsset => widget.assets.elementAt(currentIndex);
@@ -143,6 +137,10 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// Height for bottom detail widget.
   /// 底部详情部件的高度
   double get bottomDetailHeight => 140.0;
+
+  /// Whether the current platform is Apple OS.
+  /// 当前平台是否为苹果系列系统
+  bool get isAppleOS => Platform.isIOS || Platform.isMacOS;
 
   @override
   void initState() {
@@ -205,8 +203,8 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
 
   /// Method to switch [isDisplayingDetail].
   /// 切换显示详情状态的方法
-  void switchDisplayingDetail() {
-    isDisplayingDetail = !isDisplayingDetail;
+  void switchDisplayingDetail({bool value}) {
+    isDisplayingDetail = value ?? !isDisplayingDetail;
 //    if (!Platform.isIOS) {
 //      SystemChrome.setEnabledSystemUIOverlays(
 //        isDisplayingDetail ? SystemUiOverlay.values : <SystemUiOverlay>[],
@@ -217,22 +215,10 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
     }
   }
 
-  /// Methods to set [isAllowSwitchPage].
-  /// 设置是否允许切换页面的方法
-  void allowSwitchPages(bool value) {
-    if (value == isAllowSwitchPage) {
-      return;
-    }
-    isAllowSwitchPage = value;
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   /// Sync selected assets currently with asset picker provider.
   /// 在预览中当前已选的图片同步到选择器的状态
   Future<bool> syncSelectedAssetsWhenPop() async {
-    if (provider != null && provider.currentlySelectedAssets != null) {
+    if (provider?.currentlySelectedAssets != null) {
       widget.selectorProvider.selectedAssets = provider.currentlySelectedAssets;
     }
     return true;
@@ -245,8 +231,7 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
     Widget builder;
     switch (asset.type) {
       case AssetType.audio:
-//        builder = audioPageBuilder(context, index);
-        builder = const SizedBox.shrink();
+        builder = AudioPageBuilder(asset: asset, state: this);
         break;
       case AssetType.image:
         builder = ImagePageBuilder(asset: asset, state: this);
@@ -255,7 +240,9 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
         builder = VideoPageBuilder(asset: asset, state: this);
         break;
       case AssetType.other:
-        builder = Center(child: Text(widget.textDelegate.unSupportedAssetType));
+        builder = Center(
+          child: Text(Constants.textDelegate.unSupportedAssetType),
+        );
         break;
     }
     return builder;
@@ -267,12 +254,7 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
     Widget loader;
     switch (state.extendedImageLoadState) {
       case LoadState.loading:
-        loader = Center(
-          child: PlatformProgressIndicator(
-            color: widget.themeData.buttonColor,
-            size: Screens.width / 10,
-          ),
-        );
+        loader = const SizedBox.shrink();
         break;
       case LoadState.completed:
         loader = FadeImageBuilder(child: state.completedWidget);
@@ -287,44 +269,44 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// AppBar widget.
   /// 顶栏部件
   Widget appBar(BuildContext context) => AnimatedPositioned(
-    duration: kThemeAnimationDuration,
-    curve: Curves.easeInOut,
-    top: isDisplayingDetail
-        ? 0.0
-        : -(Screens.topSafeHeight + kToolbarHeight),
-    left: 0.0,
-    right: 0.0,
-    height: Screens.topSafeHeight + kToolbarHeight,
-    child: Container(
-      padding: EdgeInsets.only(top: Screens.topSafeHeight, right: 12.0),
-      color: Colors.grey[850].withOpacity(0.95),
-      child: Row(
-        children: <Widget>[
-          const BackButton(),
-          StreamBuilder<int>(
-            initialData: currentIndex,
-            stream: pageStreamController.stream,
-            builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
-              return Text(
-                '${snapshot.data + 1}/${widget.assets.length}',
-                style: TextStyle(
-                  color: Colors.grey[200],
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
+        duration: kThemeAnimationDuration,
+        curve: Curves.easeInOut,
+        top: isDisplayingDetail
+            ? 0.0
+            : -(Screens.topSafeHeight + kToolbarHeight),
+        left: 0.0,
+        right: 0.0,
+        height: Screens.topSafeHeight + kToolbarHeight,
+        child: Container(
+          padding: EdgeInsets.only(top: Screens.topSafeHeight, right: 12.0),
+          color: Colors.grey[850].withOpacity(0.95),
+          child: Row(
+            children: <Widget>[
+              const BackButton(),
+              StreamBuilder<int>(
+                initialData: currentIndex,
+                stream: pageStreamController.stream,
+                builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
+                  return Text(
+                    '${snapshot.data + 1}/${widget.assets.length}',
+                    style: TextStyle(
+                      color: Colors.grey[200],
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                },
+              ),
+              const Spacer(),
+              if (provider != null)
+                ChangeNotifierProvider<AssetPickerViewerProvider>.value(
+                  value: provider,
+                  child: confirmButton(context),
                 ),
-              );
-            },
+            ],
           ),
-          const Spacer(),
-          if (provider != null)
-            ChangeNotifierProvider<AssetPickerViewerProvider>.value(
-              value: provider,
-              child: confirmButton(context),
-            ),
-        ],
-      ),
-    ),
-  );
+        ),
+      );
 
   /// Confirm button.
   /// 确认按钮
@@ -335,37 +317,43 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// 资源选择器将识别并一同返回。
   Widget confirmButton(BuildContext context) =>
       Consumer<AssetPickerViewerProvider>(
-        builder:
-            (BuildContext _, AssetPickerViewerProvider provider, Widget __) {
-          return MaterialButton(
-            minWidth: provider.isSelectedNotEmpty ? 48.0 : 20.0,
-            height: 32.0,
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            color: provider.isSelectedNotEmpty
-                ? widget.themeData.buttonColor
-                : widget.themeData.dividerColor,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(3.0)),
-            child: Text(
-              provider.isSelectedNotEmpty
-                  ? '${widget.textDelegate.confirm}(${provider.currentlySelectedAssets.length}'
-                  '/'
-                  '${widget.selectorProvider.maxAssets})'
-                  : widget.textDelegate.confirm,
-              style: TextStyle(
-                color: provider.isSelectedNotEmpty
-                    ? Colors.white
-                    : Colors.grey[600],
-                fontSize: 17.0,
-                fontWeight: FontWeight.normal,
+        builder: (
+          BuildContext _,
+          AssetPickerViewerProvider provider,
+          Widget __,
+        ) {
+          return Container(
+            margin: isAppleOS ? const EdgeInsets.only(right: 10.0) : null,
+            child: MaterialButton(
+              minWidth: provider.isSelectedNotEmpty ? 48.0 : 20.0,
+              height: 32.0,
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              color: provider.isSelectedNotEmpty
+                  ? widget.themeData.buttonColor
+                  : widget.themeData.dividerColor,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(3.0)),
+              child: Text(
+                provider.isSelectedNotEmpty
+                    ? '${Constants.textDelegate.confirm}(${provider.currentlySelectedAssets.length}'
+                        '/'
+                        '${widget.selectorProvider.maxAssets})'
+                    : Constants.textDelegate.confirm,
+                style: TextStyle(
+                  color: provider.isSelectedNotEmpty
+                      ? Colors.white
+                      : Colors.grey[600],
+                  fontSize: 17.0,
+                  fontWeight: FontWeight.normal,
+                ),
               ),
+              onPressed: () {
+                if (provider.isSelectedNotEmpty) {
+                  Navigator.of(context).pop(provider.currentlySelectedAssets);
+                }
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            onPressed: () {
-              if (provider.isSelectedNotEmpty) {
-                Navigator.of(context).pop(provider.currentlySelectedAssets);
-              }
-            },
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           );
         },
       );
@@ -392,11 +380,11 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
               child: Selector<AssetPickerViewerProvider, List<AssetEntity>>(
                 selector:
                     (BuildContext _, AssetPickerViewerProvider provider) =>
-                provider.currentlySelectedAssets,
+                        provider.currentlySelectedAssets,
                 builder: (BuildContext _,
                     List<AssetEntity> currentlySelectedAssets, Widget __) {
                   final bool isSelected =
-                  currentlySelectedAssets.contains(asset);
+                      currentlySelectedAssets.contains(asset);
                   return Stack(
                     children: <Widget>[
                       Positioned.fill(
@@ -416,8 +404,8 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
                         decoration: BoxDecoration(
                           border: isViewing
                               ? Border.all(
-                              color: widget.themeData.buttonColor,
-                              width: 2.0)
+                                  color: widget.themeData.buttonColor,
+                                  width: 2.0)
                               : null,
                           color: isSelected ? null : Colors.white54,
                         ),
@@ -436,108 +424,108 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// Edit button. (No usage currently)
   /// 编辑按钮 (目前没有使用)
   Widget get editButton => Text(
-    widget.textDelegate.edit,
-    style: const TextStyle(fontSize: 18.0),
-  );
+        Constants.textDelegate.edit,
+        style: const TextStyle(fontSize: 18.0),
+      );
 
   /// Select button.
   /// 选择按钮
   Widget get selectButton => Row(
-    children: <Widget>[
-      StreamBuilder<int>(
-        initialData: currentIndex,
-        stream: pageStreamController.stream,
-        builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
-          return Selector<AssetPickerViewerProvider, List<AssetEntity>>(
-            selector:
-                (BuildContext _, AssetPickerViewerProvider provider) =>
-            provider.currentlySelectedAssets,
-            builder: (BuildContext _,
-                List<AssetEntity> currentlySelectedAssets, Widget __) {
-              final AssetEntity asset =
-              widget.assets.elementAt(snapshot.data);
-              final bool selected = currentlySelectedAssets.contains(asset);
-              return RoundedCheckbox(
-                value: selected,
-                onChanged: (bool value) {
-                  if (selected) {
-                    provider.unSelectAssetEntity(asset);
-                  } else {
-                    provider.selectAssetEntity(asset);
-                  }
+        children: <Widget>[
+          StreamBuilder<int>(
+            initialData: currentIndex,
+            stream: pageStreamController.stream,
+            builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
+              return Selector<AssetPickerViewerProvider, List<AssetEntity>>(
+                selector:
+                    (BuildContext _, AssetPickerViewerProvider provider) =>
+                        provider.currentlySelectedAssets,
+                builder: (BuildContext _,
+                    List<AssetEntity> currentlySelectedAssets, Widget __) {
+                  final AssetEntity asset =
+                      widget.assets.elementAt(snapshot.data);
+                  final bool selected = currentlySelectedAssets.contains(asset);
+                  return RoundedCheckbox(
+                    value: selected,
+                    onChanged: (bool value) {
+                      if (selected) {
+                        provider.unSelectAssetEntity(asset);
+                      } else {
+                        provider.selectAssetEntity(asset);
+                      }
+                    },
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
                 },
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               );
             },
-          );
-        },
-      ),
-      Text(
-        widget.textDelegate.select,
-        style: const TextStyle(fontSize: 18.0),
-      ),
-    ],
-  );
+          ),
+          Text(
+            Constants.textDelegate.select,
+            style: const TextStyle(fontSize: 18.0),
+          ),
+        ],
+      );
 
   /// Detail widget aligned to bottom.
   /// 底部信息部件
   Widget get bottomDetail => AnimatedPositioned(
-    duration: kThemeAnimationDuration,
-    curve: Curves.easeInOut,
-    bottom: isDisplayingDetail
-        ? 0.0
-        : -(Screens.bottomSafeHeight + bottomDetailHeight),
-    left: 0.0,
-    right: 0.0,
-    height: Screens.bottomSafeHeight + bottomDetailHeight,
-    child: ChangeNotifierProvider<AssetPickerViewerProvider>.value(
-      value: provider,
-      child: Container(
-        padding: EdgeInsets.only(bottom: Screens.bottomSafeHeight),
-        color: Colors.grey[850].withOpacity(0.95),
-        child: Column(
-          children: <Widget>[
-            SizedBox(
-              height: 90.0,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.zero,
-                itemCount: widget.selectedAssets.length,
-                itemBuilder: (BuildContext _, int index) =>
-                    _bottomDetailItem(index),
-              ),
-            ),
-            Container(
-              height: 1.0,
-              color: widget.themeData.dividerColor,
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    const Spacer(),
-                    selectButton,
-                  ],
+        duration: kThemeAnimationDuration,
+        curve: Curves.easeInOut,
+        bottom: isDisplayingDetail
+            ? 0.0
+            : -(Screens.bottomSafeHeight + bottomDetailHeight),
+        left: 0.0,
+        right: 0.0,
+        height: Screens.bottomSafeHeight + bottomDetailHeight,
+        child: ChangeNotifierProvider<AssetPickerViewerProvider>.value(
+          value: provider,
+          child: Container(
+            padding: EdgeInsets.only(bottom: Screens.bottomSafeHeight),
+            color: Colors.grey[850].withOpacity(0.95),
+            child: Column(
+              children: <Widget>[
+                SizedBox(
+                  height: 90.0,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    itemCount: widget.selectedAssets.length,
+                    itemBuilder: (BuildContext _, int index) =>
+                        _bottomDetailItem(index),
+                  ),
                 ),
-              ),
+                Container(
+                  height: 1.0,
+                  color: widget.themeData.dividerColor,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        const Spacer(),
+                        selectButton,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   /// Item widget when [AssetEntity.thumbData] load failed.
   /// 资源缩略数据加载失败时使用的部件
   Widget get _failedItem => Center(
-    child: Text(
-      widget.textDelegate.loadFailed,
-      textAlign: TextAlign.center,
-      style: TextStyle(color: Colors.white, fontSize: 18.0),
-    ),
-  );
+        child: Text(
+          Constants.textDelegate.loadFailed,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white, fontSize: 18.0),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -552,10 +540,8 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
             child: Stack(
               children: <Widget>[
                 Positioned.fill(
-                  child: PageView.builder(
-                    physics: isAllowSwitchPage
-                        ? const CustomScrollPhysics()
-                        : const NeverScrollableScrollPhysics(),
+                  child: ExtendedImageGesturePageView.builder(
+                    physics: const CustomScrollPhysics(),
                     controller: pageController,
                     itemCount: widget.assets.length,
                     itemBuilder: assetPageBuilder,

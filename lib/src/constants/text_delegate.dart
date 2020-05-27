@@ -2,6 +2,9 @@
 /// [Author] Alex (https://github.com/AlexVincent525)
 /// [Date] 2020/4/7 10:25
 ///
+
+/// Text delegate that controls text in widgets.
+/// 控制部件中的文字实现
 abstract class TextDelegate {
   /// Confirm string for confirm button.
   /// 确认按钮的字段
@@ -47,11 +50,14 @@ abstract class TextDelegate {
   /// 未支持的资源类型的字段
   String unSupportedAssetType;
 
-  /// This is used in video asset item in picker, in order to display the duration of the asset.
-  /// 该字段用在选择器视频部件上，用于显示视频资源的时长。
-  String videoIndicatorBuilder(Duration duration);
+  /// This is used in video asset item in picker, in order to display
+  /// the duration of the video or audio type of asset.
+  /// 该字段用在选择器视频或音频部件上，用于显示视频或音频资源的时长。
+  String durationIndicatorBuilder(Duration duration);
 }
 
+/// Default text delegate implements with Chinese.
+/// 中文文字实现
 class DefaultTextDelegate implements TextDelegate {
   factory DefaultTextDelegate() => _instance;
 
@@ -93,7 +99,7 @@ class DefaultTextDelegate implements TextDelegate {
   String unSupportedAssetType = '尚未支持的资源类型';
 
   @override
-  String videoIndicatorBuilder(Duration duration) {
+  String durationIndicatorBuilder(Duration duration) {
     const String separator = ':';
     final String minute = '${(duration.inMinutes).toString().padLeft(2, '0')}';
     final String second =

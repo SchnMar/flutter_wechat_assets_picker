@@ -12,19 +12,22 @@ import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 /// [ChangeNotifier] for assets picker.
 /// 资源选择器的 provider model
 class AssetPickerProvider extends ChangeNotifier {
-  /// Call [getAssetList] when constructing.
-  /// 构造时开始获取资源
+  /// Call [getAssetList] with route duration when constructing.
+  /// 构造时根据路由时长延时获取资源
   AssetPickerProvider({
     this.maxAssets = 9,
     this.pageSize = 320,
     this.pathThumbSize = 80,
     this.requestType = RequestType.image,
     List<AssetEntity> selectedAssets,
+    Duration routeDuration,
   }) {
     if (selectedAssets?.isNotEmpty ?? false) {
       _selectedAssets = List<AssetEntity>.from(selectedAssets);
     }
-    getAssetList();
+    Future<void>.delayed(routeDuration).then(
+      (dynamic _) => getAssetList(),
+    );
   }
 
   /// Maximum count for asset selection.
@@ -63,8 +66,7 @@ class AssetPickerProvider extends ChangeNotifier {
   bool get isAssetsEmpty => _isAssetsEmpty;
 
   set isAssetsEmpty(bool value) {
-    assert(value != null);
-    if (value == _isAssetsEmpty) {
+    if (value == null || value == _isAssetsEmpty) {
       return;
     }
     _isAssetsEmpty = value;
@@ -226,8 +228,9 @@ class AssetPickerProvider extends ChangeNotifier {
   /// Get assets under the specific path entity.
   /// 获取指定路径下的资源
   Future<void> getAssetsFromEntity(int page, AssetPathEntity pathEntity) async {
-    _currentAssets =
-        (await pathEntity.getAssetListPaged(page, pageSize ?? pathEntity.assetCount)).toList();
+    _currentAssets = (await pathEntity.getAssetListPaged(
+            page, pageSize ?? pathEntity.assetCount))
+        .toList();
     _hasAssetsToDisplay = currentAssets?.isNotEmpty ?? false;
     notifyListeners();
   }
@@ -236,7 +239,9 @@ class AssetPickerProvider extends ChangeNotifier {
   /// 加载更多资源
   Future<void> loadMoreAssets() async {
     final List<AssetEntity> assets = (await currentPathEntity.getAssetListPaged(
-            currentAssetsListPage, pageSize))
+      currentAssetsListPage,
+      pageSize,
+    ))
         .toList();
     if (assets.isNotEmpty && currentAssets.contains(assets[0])) {
       return;

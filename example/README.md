@@ -1,3 +1,3 @@
-# example
+# Wechat assets picker example
 
-This is the example project for wechat_assets_picker.
+This is an example for wechat assets picker.
