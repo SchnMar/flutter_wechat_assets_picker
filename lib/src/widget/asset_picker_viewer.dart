@@ -283,26 +283,24 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
           child: Row(
             children: <Widget>[
               const BackButton(),
-              StreamBuilder<int>(
-                initialData: currentIndex,
-                stream: pageStreamController.stream,
-                builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
-                  return Text(
-                    '${snapshot.data + 1}/${widget.assets.length}',
-                    style: TextStyle(
-                      color: Colors.grey[200],
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  );
-                },
-              ),
-              const Spacer(),
-              if (provider != null)
-                ChangeNotifierProvider<AssetPickerViewerProvider>.value(
-                  value: provider,
-                  child: confirmButton(context),
+              if (!isAppleOS)
+                StreamBuilder<int>(
+                  initialData: currentIndex,
+                  stream: pageStreamController.stream,
+                  builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
+                    return Text(
+                      '${snapshot.data + 1}/${widget.assets.length}',
+                      style: TextStyle(
+                        color: Colors.grey[200],
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  },
                 ),
+              const Spacer(),
+              if (isAppleOS && provider != null) selectButton,
+              if (!isAppleOS && provider != null) confirmButton(context),
             ],
           ),
         ),
@@ -316,15 +314,15 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
   /// 当有资源已选时，点击按钮将把已选资源通过路由返回。
   /// 资源选择器将识别并一同返回。
   Widget confirmButton(BuildContext context) =>
-      Consumer<AssetPickerViewerProvider>(
-        builder: (
-          BuildContext _,
-          AssetPickerViewerProvider provider,
-          Widget __,
-        ) {
-          return Container(
-            margin: isAppleOS ? const EdgeInsets.only(right: 10.0) : null,
-            child: MaterialButton(
+      ChangeNotifierProvider<AssetPickerViewerProvider>.value(
+        value: provider,
+        child: Consumer<AssetPickerViewerProvider>(
+          builder: (
+            BuildContext _,
+            AssetPickerViewerProvider provider,
+            Widget __,
+          ) {
+            return MaterialButton(
               minWidth: provider.isSelectedNotEmpty ? 48.0 : 20.0,
               height: 32.0,
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -332,7 +330,8 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
                   ? widget.themeData.buttonColor
                   : widget.themeData.dividerColor,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(3.0)),
+                borderRadius: BorderRadius.circular(3.0),
+              ),
               child: Text(
                 provider.isSelectedNotEmpty
                     ? '${Constants.textDelegate.confirm}(${provider.currentlySelectedAssets.length}'
@@ -353,14 +352,14 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
                 }
               },
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          );
-        },
+            );
+          },
+        ),
       );
 
   /// Thumb item widget in bottom detail.
   /// 底部信息栏单个资源缩略部件
-  Widget _bottomDetailItem(int index) {
+  Widget _bottomDetailItem(BuildContext _, int index) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
       child: AspectRatio(
@@ -405,7 +404,8 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
                           border: isViewing
                               ? Border.all(
                                   color: widget.themeData.buttonColor,
-                                  width: 2.0)
+                                  width: 2.0,
+                                )
                               : null,
                           color: isSelected ? null : Colors.white54,
                         ),
@@ -436,36 +436,98 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
             initialData: currentIndex,
             stream: pageStreamController.stream,
             builder: (BuildContext _, AsyncSnapshot<int> snapshot) {
-              return Selector<AssetPickerViewerProvider, List<AssetEntity>>(
-                selector:
-                    (BuildContext _, AssetPickerViewerProvider provider) =>
-                        provider.currentlySelectedAssets,
-                builder: (BuildContext _,
-                    List<AssetEntity> currentlySelectedAssets, Widget __) {
-                  final AssetEntity asset =
-                      widget.assets.elementAt(snapshot.data);
-                  final bool selected = currentlySelectedAssets.contains(asset);
-                  return RoundedCheckbox(
-                    value: selected,
-                    onChanged: (bool value) {
-                      if (selected) {
-                        provider.unSelectAssetEntity(asset);
-                      } else {
-                        provider.selectAssetEntity(asset);
-                      }
-                    },
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  );
-                },
+              return ChangeNotifierProvider<AssetPickerViewerProvider>.value(
+                value: provider,
+                child: Selector<AssetPickerViewerProvider, List<AssetEntity>>(
+                  selector: (
+                    BuildContext _,
+                    AssetPickerViewerProvider provider,
+                  ) =>
+                      provider.currentlySelectedAssets,
+                  builder: (
+                    BuildContext _,
+                    List<AssetEntity> currentlySelectedAssets,
+                    Widget __,
+                  ) {
+                    final AssetEntity asset =
+                        widget.assets.elementAt(snapshot.data);
+                    final bool isSelected =
+                        currentlySelectedAssets.contains(asset);
+                    if (isAppleOS) {
+                      return _appleOSSelectButton(isSelected, asset);
+                    } else {
+                      return _androidSelectButton(isSelected, asset);
+                    }
+                  },
+                ),
               );
             },
           ),
-          Text(
-            Constants.textDelegate.select,
-            style: const TextStyle(fontSize: 18.0),
-          ),
+          if (!isAppleOS)
+            Text(
+              Constants.textDelegate.select,
+              style: const TextStyle(fontSize: 18.0),
+            ),
         ],
       );
+
+  /// Select button for apple OS.
+  /// 苹果系列系统的选择按钮
+  Widget _appleOSSelectButton(bool isSelected, AssetEntity asset) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10.0),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (isSelected) {
+            provider.unSelectAssetEntity(asset);
+          } else {
+            provider.selectAssetEntity(asset);
+          }
+        },
+        child: AnimatedContainer(
+          duration: kThemeAnimationDuration,
+          width: 28.0,
+          decoration: BoxDecoration(
+            border: !isSelected
+                ? Border.all(
+                    color: widget.themeData.iconTheme.color,
+                  )
+                : null,
+            color: isSelected ? widget.themeData.buttonColor : null,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: isSelected
+                ? Text(
+                    (currentIndex + 1).toString(),
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : Icon(Icons.check, size: 20.0),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Select button for Android.
+  /// 安卓系统的选择按钮
+  Widget _androidSelectButton(bool isSelected, AssetEntity asset) {
+    return RoundedCheckbox(
+      value: isSelected,
+      onChanged: (bool value) {
+        if (isSelected) {
+          provider.unSelectAssetEntity(asset);
+        } else {
+          provider.selectAssetEntity(asset);
+        }
+      },
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
 
   /// Detail widget aligned to bottom.
   /// 底部信息部件
@@ -478,41 +540,46 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
         left: 0.0,
         right: 0.0,
         height: Screens.bottomSafeHeight + bottomDetailHeight,
-        child: ChangeNotifierProvider<AssetPickerViewerProvider>.value(
-          value: provider,
-          child: Container(
-            padding: EdgeInsets.only(bottom: Screens.bottomSafeHeight),
-            color: Colors.grey[850].withOpacity(0.95),
-            child: Column(
-              children: <Widget>[
-                SizedBox(
+        child: Container(
+          padding: EdgeInsets.only(bottom: Screens.bottomSafeHeight),
+          color: widget.themeData.canvasColor.withOpacity(0.95),
+          child: Column(
+            children: <Widget>[
+              ChangeNotifierProvider<AssetPickerViewerProvider>.value(
+                value: provider,
+                child: SizedBox(
                   height: 90.0,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: EdgeInsets.zero,
                     itemCount: widget.selectedAssets.length,
-                    itemBuilder: (BuildContext _, int index) =>
-                        _bottomDetailItem(index),
+                    itemBuilder: _bottomDetailItem,
                   ),
                 ),
-                Container(
-                  height: 1.0,
-                  color: widget.themeData.dividerColor,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        const Spacer(),
+              ),
+              Container(
+                height: 1.0,
+                color: widget.themeData.dividerColor,
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      const Spacer(),
+                      if (isAppleOS && provider != null)
+                        ChangeNotifierProvider<AssetPickerViewerProvider>.value(
+                          value: provider,
+                          child: confirmButton(context),
+                        )
+                      else
                         selectButton,
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
@@ -523,7 +590,7 @@ class AssetPickerViewerState extends State<AssetPickerViewer>
         child: Text(
           Constants.textDelegate.loadFailed,
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white, fontSize: 18.0),
+          style: const TextStyle(fontSize: 18.0),
         ),
       );
 
