@@ -46,6 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
       selectedAssets: assets,
       themeColor: themeColor,
       requestType: RequestType.common,
+      startPathEntity: 'Aaa',
     );
     if (result != null) {
       assets = List<AssetEntity>.from(result);

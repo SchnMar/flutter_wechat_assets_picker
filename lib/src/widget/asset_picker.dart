@@ -80,6 +80,7 @@ class AssetPicker extends StatelessWidget {
     TextDelegate textDelegate,
     Curve routeCurve = Curves.easeIn,
     Duration routeDuration = const Duration(milliseconds: 300),
+    String startPathEntity,
   }) async {
     if (maxAssets == null || maxAssets < 1) {
       throw ArgumentError('maxAssets must be greater than 1.');
@@ -101,6 +102,7 @@ class AssetPicker extends StatelessWidget {
           selectedAssets: selectedAssets,
           requestType: requestType,
           routeDuration: routeDuration,
+          startPathEntityName: startPathEntity,
         );
         final Widget picker = AssetPicker(
           key: key,
@@ -110,6 +112,7 @@ class AssetPicker extends StatelessWidget {
           themeColor: themeColor,
           pickerTheme: pickerTheme,
         );
+
         final List<AssetEntity> result = await Navigator.of(
           context,
           rootNavigator: true,
@@ -120,6 +123,7 @@ class AssetPicker extends StatelessWidget {
             transitionDuration: routeDuration,
           ),
         );
+
         return result;
       } else {
         return null;

@@ -21,6 +21,7 @@ class AssetPickerProvider extends ChangeNotifier {
     this.requestType = RequestType.image,
     List<AssetEntity> selectedAssets,
     Duration routeDuration,
+    this.startPathEntityName = 'Recents',
   }) {
     if (selectedAssets?.isNotEmpty ?? false) {
       _selectedAssets = List<AssetEntity>.from(selectedAssets);
@@ -29,6 +30,8 @@ class AssetPickerProvider extends ChangeNotifier {
       (dynamic _) => getAssetList(),
     );
   }
+
+  final String startPathEntityName;
 
   /// Maximum count for asset selection.
   /// 资源选择的最大数量
@@ -152,6 +155,20 @@ class AssetPickerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void currentPathEntityByName(String name) {
+    print('hello with $name');
+    assert(name != null);
+    if (_currentPathEntity != null && name != _currentPathEntity.name) {
+      return;
+    }
+    _pathEntityList.forEach((AssetPathEntity key, Uint8List value) {
+      if (key.name == name) {
+        _currentPathEntity = key;
+        notifyListeners();
+      }
+    });
+  }
+
   /// Assets under current path entity.
   /// 正在查看的资源路径下的所有资源
   List<AssetEntity> _currentAssets;
@@ -204,7 +221,7 @@ class AssetPickerProvider extends ChangeNotifier {
       });
     }
     if (_pathEntityList.isNotEmpty) {
-      _currentPathEntity = pathEntityList.keys.elementAt(0);
+      currentPathEntityByName(startPathEntityName);
       await _currentPathEntity.refreshPathProperties();
       totalAssetsCount = currentPathEntity.assetCount;
       getAssetsFromEntity(0, currentPathEntity);
