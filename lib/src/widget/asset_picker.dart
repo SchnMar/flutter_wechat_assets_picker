@@ -239,10 +239,6 @@ class AssetPicker extends StatelessWidget {
                 height: appBarItemHeight,
                 constraints: BoxConstraints(maxWidth: Screens.width * 0.5),
                 padding: const EdgeInsets.only(left: 12.0, right: 6.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: theme.dividerColor,
-                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -261,10 +257,6 @@ class AssetPicker extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(left: 5.0),
                       child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: theme.dividerColor.withAlpha(150),
-                        ),
                         child: Transform.rotate(
                           angle: provider.isSwitchingPath ? math.pi : 0.0,
                           alignment: Alignment.center,

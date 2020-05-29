@@ -156,7 +156,6 @@ class AssetPickerProvider extends ChangeNotifier {
   }
 
   void currentPathEntityByName(String name) {
-    print('hello with $name');
     assert(name != null);
     if (_currentPathEntity != null && name != _currentPathEntity.name) {
       return;
