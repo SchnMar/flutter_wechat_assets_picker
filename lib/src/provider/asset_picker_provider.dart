@@ -222,6 +222,7 @@ class AssetPickerProvider extends ChangeNotifier {
     }
     if (_pathEntityList.isNotEmpty) {
       currentPathEntityByName(startPathEntityName);
+      _currentPathEntity ??= pathEntityList.keys.elementAt(0);
       await _currentPathEntity.refreshPathProperties();
       totalAssetsCount = currentPathEntity.assetCount;
       getAssetsFromEntity(0, currentPathEntity);

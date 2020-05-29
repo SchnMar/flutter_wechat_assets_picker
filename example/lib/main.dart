@@ -42,11 +42,38 @@ class _MyHomePageState extends State<MyHomePage> {
       context,
       maxAssets: 9,
       pathThumbSize: 84,
+      pageSize: 240,
       gridCount: 4,
+      themeColor: null,
+      pickerTheme: ThemeData.light().copyWith(
+        backgroundColor: Colors.white,
+        buttonColor: themeColor,
+        brightness: Brightness.light,
+        primaryColor: Colors.grey[100],
+        primaryColorBrightness: Brightness.light,
+        primaryColorLight: Colors.grey[100],
+        primaryColorDark: Colors.grey[100],
+        accentColor: themeColor,
+        accentColorBrightness: Brightness.light,
+        canvasColor: Color.fromRGBO(248, 247, 248, 1),
+        scaffoldBackgroundColor: Colors.grey[100],
+        bottomAppBarColor: Colors.grey[100],
+        cardColor: Colors.grey[100],
+        highlightColor: Colors.transparent,
+        toggleableActiveColor: themeColor,
+        cursorColor: themeColor,
+        textSelectionColor: themeColor.withAlpha(100),
+        textSelectionHandleColor: themeColor,
+        indicatorColor: themeColor,
+        appBarTheme: const AppBarTheme(
+          brightness: Brightness.light,
+          elevation: 102.0,
+        ),
+      ),
       selectedAssets: assets,
-      themeColor: themeColor,
       requestType: RequestType.common,
-      startPathEntity: 'Aaa',
+      textDelegate: PickerTextDelegate._internal(),
+      startPathEntity: 'Recents',
     );
     if (result != null) {
       assets = List<AssetEntity>.from(result);
@@ -159,5 +186,55 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
     );
+  }
+}
+
+class PickerTextDelegate implements TextDelegate {
+  factory PickerTextDelegate() => _instance;
+
+  PickerTextDelegate._internal();
+
+  static final PickerTextDelegate _instance = PickerTextDelegate._internal();
+
+  @override
+  String confirm = 'next';
+
+  @override
+  String cancel = 'X';
+
+  @override
+  String edit = 'Edit';
+
+  @override
+  String emptyPlaceHolder = 'none selected';
+
+  @override
+  String gifIndicator = 'GIF';
+
+  @override
+  String heicNotSupported = 'heic not supported';
+
+  @override
+  String loadFailed = 'load failed';
+
+  @override
+  String original = 'original';
+
+  @override
+  String preview = 'preview';
+
+  @override
+  String select = 'select';
+
+  @override
+  String unSupportedAssetType = 'unSupportedAssetType';
+
+  @override
+  String durationIndicatorBuilder(Duration duration) {
+    const String separator = ':';
+    final String minute = '${(duration.inMinutes).toString().padLeft(2, '0')}';
+    final String second =
+        '${((duration - Duration(minutes: duration.inMinutes)).inSeconds).toString().padLeft(2, '0')}';
+    return '$minute$separator$second';
   }
 }

@@ -486,39 +486,22 @@ class AssetPicker extends StatelessWidget {
   /// 当有资源已选时，点击按钮将把已选资源通过路由返回。
   Widget confirmButton(BuildContext context) => Consumer<AssetPickerProvider>(
         builder: (BuildContext _, AssetPickerProvider provider, Widget __) {
-          return MaterialButton(
-            minWidth: provider.isSelectedNotEmpty ? 48.0 : 20.0,
-            height: appBarItemHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 12.0),
-            color:
-                provider.isSelectedNotEmpty ? themeColor : theme.dividerColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(3.0),
-            ),
-            elevation: 0.0,
-            disabledElevation: 0.0,
-            focusElevation: 0.0,
-            highlightElevation: 0.0,
-            hoverElevation: 0.0,
+          return GestureDetector(
             child: Text(
-              provider.isSelectedNotEmpty && !isSingleAssetMode
-                  ? '${Constants.textDelegate.confirm}'
-                      '(${provider.selectedAssets.length}/${provider.maxAssets})'
-                  : Constants.textDelegate.confirm,
+              Constants.textDelegate.confirm,
               style: TextStyle(
                 color: provider.isSelectedNotEmpty
-                    ? Colors.white
+                    ? Colors.blue
                     : Colors.grey[600],
                 fontSize: 17.0,
                 fontWeight: FontWeight.normal,
               ),
             ),
-            onPressed: () {
+            onTap: () {
               if (provider.isSelectedNotEmpty) {
                 Navigator.of(context).pop(provider.selectedAssets);
               }
             },
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           );
         },
       );
@@ -641,12 +624,14 @@ class AssetPicker extends StatelessWidget {
         return Positioned.fill(
           child: GestureDetector(
             onTap: () {
-              AssetPickerViewer.pushToViewer(
-                context,
-                currentIndex: index,
-                assets: provider.currentAssets,
-                themeData: theme,
-              );
+              if (selected) {
+                provider.unSelectAsset(asset);
+              } else {
+                if (isSingleAssetMode) {
+                  provider.selectedAssets.clear();
+                }
+                provider.selectAsset(asset);
+              }
             },
             child: AnimatedContainer(
               duration: switchingPathDuration,
@@ -1022,11 +1007,6 @@ class AssetPicker extends StatelessWidget {
                             child: Stack(
                               children: <Widget>[
                                 Positioned.fill(child: assetsGrid(context)),
-                                if (!isSingleAssetMode || isAppleOS)
-                                  PositionedDirectional(
-                                    bottom: 0.0,
-                                    child: bottomActionBar(context),
-                                  ),
                               ],
                             ),
                           ),
@@ -1043,6 +1023,9 @@ class AssetPicker extends StatelessWidget {
           centerTitle: true,
           title: pathEntitySelector,
           leading: backButton(context),
+          actions: <Widget>[
+            confirmButton(context),
+          ],
           actionsPadding: const EdgeInsets.only(right: 14.0),
           blurRadius: appleOSBlurRadius,
         ),
