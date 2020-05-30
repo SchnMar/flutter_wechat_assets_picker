@@ -73,7 +73,6 @@ class _MyHomePageState extends State<MyHomePage> {
       selectedAssets: assets,
       requestType: RequestType.common,
       textDelegate: PickerTextDelegate._internal(),
-      startPathEntity: 'Recents',
     );
     if (result != null) {
       assets = List<AssetEntity>.from(result);

@@ -81,7 +81,6 @@ class AssetPicker extends StatelessWidget {
     TextDelegate textDelegate,
     Curve routeCurve = Curves.easeIn,
     Duration routeDuration = const Duration(milliseconds: 300),
-    String startPathEntity,
   }) async {
     if (maxAssets == null || maxAssets < 1) {
       throw ArgumentError('maxAssets must be greater than 1.');
@@ -102,9 +101,8 @@ class AssetPicker extends StatelessWidget {
           pathThumbSize: pathThumbSize,
           selectedAssets: selectedAssets,
           requestType: requestType,
-          sortPathDelegate: sortPathDelegate,
+          sortPathDelegate: SortPathDelegate.common,
           routeDuration: routeDuration,
-          startPathEntityName: startPathEntity,
         );
         final Widget picker = AssetPicker(
           key: key,
@@ -481,14 +479,17 @@ class AssetPicker extends StatelessWidget {
   Widget confirmButton(BuildContext context) => Consumer<AssetPickerProvider>(
         builder: (BuildContext _, AssetPickerProvider provider, Widget __) {
           return GestureDetector(
-            child: Text(
-              Constants.textDelegate.confirm,
-              style: TextStyle(
-                color: provider.isSelectedNotEmpty
-                    ? Colors.blue
-                    : Colors.grey[600],
-                fontSize: 17.0,
-                fontWeight: FontWeight.normal,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Text(
+                Constants.textDelegate.confirm,
+                style: TextStyle(
+                  color: provider.isSelectedNotEmpty
+                      ? Colors.blue
+                      : Colors.grey[600],
+                  fontSize: 17.0,
+                  fontWeight: FontWeight.normal,
+                ),
               ),
             ),
             onTap: () {
