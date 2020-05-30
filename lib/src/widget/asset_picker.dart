@@ -77,6 +77,7 @@ class AssetPicker extends StatelessWidget {
     List<AssetEntity> selectedAssets,
     Color themeColor,
     ThemeData pickerTheme,
+    SortPathDelegate sortPathDelegate,
     TextDelegate textDelegate,
     Curve routeCurve = Curves.easeIn,
     Duration routeDuration = const Duration(milliseconds: 300),
@@ -101,6 +102,7 @@ class AssetPicker extends StatelessWidget {
           pathThumbSize: pathThumbSize,
           selectedAssets: selectedAssets,
           requestType: requestType,
+          sortPathDelegate: sortPathDelegate,
           routeDuration: routeDuration,
           startPathEntityName: startPathEntity,
         );

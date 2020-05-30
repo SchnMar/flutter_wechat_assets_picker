@@ -7,7 +7,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+
+import 'package:wechat_assets_picker/src/constants/constants.dart';
 
 /// [ChangeNotifier] for assets picker.
 /// 资源选择器的 provider model
@@ -19,6 +20,7 @@ class AssetPickerProvider extends ChangeNotifier {
     this.pageSize = 320,
     this.pathThumbSize = 80,
     this.requestType = RequestType.image,
+    this.sortPathDelegate = SortPathDelegate.common,
     List<AssetEntity> selectedAssets,
     Duration routeDuration,
     this.startPathEntityName = 'Recents',
@@ -27,7 +29,10 @@ class AssetPickerProvider extends ChangeNotifier {
       _selectedAssets = List<AssetEntity>.from(selectedAssets);
     }
     Future<void>.delayed(routeDuration).then(
-      (dynamic _) => getAssetList(),
+      (dynamic _) async {
+        await getAssetPathList();
+        await getAssetList();
+      },
     );
   }
 
@@ -48,6 +53,10 @@ class AssetPickerProvider extends ChangeNotifier {
   /// Request assets type.
   /// 请求的资源类型
   final RequestType requestType;
+
+  /// Delegate to sort asset path entities.
+  /// 资源路径排序的实现
+  final SortPathDelegate sortPathDelegate;
 
   /// Clear all fields when dispose.
   /// 销毁时重置所有内容
@@ -203,15 +212,24 @@ class AssetPickerProvider extends ChangeNotifier {
 
   /// Get assets path entities.
   /// 获取所有的资源路径
-  Future<void> getAssetList() async {
+  Future<void> getAssetPathList() async {
     final List<AssetPathEntity> _list = await PhotoManager.getAssetPathList(
       type: requestType,
+      // Enable need title for audio and image to get proper display.
       filterOption: FilterOptionGroup()
+        ..setOption(
+          AssetType.audio,
+          const FilterOption(needTitle: true),
+        )
         ..setOption(
           AssetType.image,
           const FilterOption(needTitle: true),
         ),
     );
+
+    /// Sort path using sort path delegate.
+    sortPathDelegate.sort(_list);
+
     for (final AssetPathEntity pathEntity in _list) {
       // Use sync method to avoid unnecessary wait.
       _pathEntityList[pathEntity] = null;
@@ -219,6 +237,17 @@ class AssetPickerProvider extends ChangeNotifier {
         _pathEntityList[pathEntity] = data;
       });
     }
+
+    /// Set first path entity as current path entity.
+    if (_pathEntityList.isNotEmpty) {
+      _currentPathEntity ??= pathEntityList.keys.elementAt(0);
+      await _currentPathEntity.refreshPathProperties();
+    }
+  }
+
+  /// Get assets list from current path entity.
+  /// 从当前已选路径获取资源列表
+  Future<void> getAssetList() async {
     if (_pathEntityList.isNotEmpty) {
       currentPathEntityByName(startPathEntityName);
       _currentPathEntity ??= pathEntityList.keys.elementAt(0);
