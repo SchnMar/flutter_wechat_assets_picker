@@ -234,7 +234,7 @@ class AssetPickerProvider extends ChangeNotifier {
   /// 从当前已选路径获取资源列表
   Future<void> getAssetList() async {
     if (_pathEntityList.isNotEmpty) {
-      _currentPathEntity ??= pathEntityList.keys.elementAt(0);
+      _currentPathEntity = pathEntityList.keys.elementAt(0);
       await _currentPathEntity.refreshPathProperties();
       totalAssetsCount = currentPathEntity.assetCount;
       getAssetsFromEntity(0, currentPathEntity);

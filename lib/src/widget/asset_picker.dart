@@ -101,7 +101,7 @@ class AssetPicker extends StatelessWidget {
           pathThumbSize: pathThumbSize,
           selectedAssets: selectedAssets,
           requestType: requestType,
-          sortPathDelegate: SortPathDelegate.common,
+          sortPathDelegate: sortPathDelegate,
           routeDuration: routeDuration,
         );
         final Widget picker = AssetPicker(
@@ -112,7 +112,6 @@ class AssetPicker extends StatelessWidget {
           themeColor: themeColor,
           pickerTheme: pickerTheme,
         );
-
         final List<AssetEntity> result = await Navigator.of(
           context,
           rootNavigator: true,
@@ -123,7 +122,6 @@ class AssetPicker extends StatelessWidget {
             transitionDuration: routeDuration,
           ),
         );
-
         return result;
       } else {
         return null;
