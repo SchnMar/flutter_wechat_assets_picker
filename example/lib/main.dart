@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
       pageSize: 240,
       gridCount: 4,
       themeColor: null,
-      successCallback: () {
+      successCallback: (List<AssetEntity> assets) {
         Navigator.of(context, rootNavigator: true).push<dynamic>(
           MaterialPageRoute<dynamic>(
               builder: (context) {

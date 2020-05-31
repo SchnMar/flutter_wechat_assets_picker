@@ -497,7 +497,7 @@ class AssetPicker extends StatelessWidget {
             ),
             onTap: () {
               if (provider.isSelectedNotEmpty) {
-                provider.successCallback();
+                provider.successCallback(provider.selectedAssets);
               }
             },
           );
