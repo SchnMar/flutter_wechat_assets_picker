@@ -478,7 +478,10 @@ class AssetPicker extends StatelessWidget {
         builder: (BuildContext _, AssetPickerProvider provider, Widget __) {
           return GestureDetector(
             child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
+              padding: const EdgeInsets.only(
+                right: 16.0,
+                bottom: 8.0,
+              ),
               child: Text(
                 Constants.textDelegate.confirm,
                 style: TextStyle(
@@ -1011,16 +1014,19 @@ class AssetPicker extends StatelessWidget {
             },
           ),
         ),
-        FixedAppBar(
-          backgroundColor: theme.canvasColor,
-          centerTitle: true,
-          title: pathEntitySelector,
-          leading: backButton(context),
-          actions: <Widget>[
-            confirmButton(context),
-          ],
-          actionsPadding: const EdgeInsets.only(right: 14.0),
-          blurRadius: appleOSBlurRadius,
+        SizedBox(
+          height: 85.0,
+          child: FixedAppBar(
+            backgroundColor: theme.canvasColor,
+            centerTitle: true,
+            title: pathEntitySelector,
+            leading: backButton(context),
+            actions: <Widget>[
+              confirmButton(context),
+            ],
+            actionsPadding: const EdgeInsets.only(right: 14.0),
+            blurRadius: appleOSBlurRadius,
+          ),
         ),
       ],
     );
