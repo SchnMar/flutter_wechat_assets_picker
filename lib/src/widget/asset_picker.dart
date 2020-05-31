@@ -81,6 +81,7 @@ class AssetPicker extends StatelessWidget {
     TextDelegate textDelegate,
     Curve routeCurve = Curves.easeIn,
     Duration routeDuration = const Duration(milliseconds: 300),
+    Function successCallback,
   }) async {
     if (maxAssets == null || maxAssets < 1) {
       throw ArgumentError('maxAssets must be greater than 1.');
@@ -103,6 +104,7 @@ class AssetPicker extends StatelessWidget {
           requestType: requestType,
           sortPathDelegate: sortPathDelegate,
           routeDuration: routeDuration,
+          successCallback: successCallback,
         );
         final Widget picker = AssetPicker(
           key: key,
@@ -495,7 +497,7 @@ class AssetPicker extends StatelessWidget {
             ),
             onTap: () {
               if (provider.isSelectedNotEmpty) {
-                Navigator.of(context).pop(provider.selectedAssets);
+                provider.successCallback();
               }
             },
           );

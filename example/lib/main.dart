@@ -1,3 +1,4 @@
+import 'package:example/test_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
@@ -45,6 +46,15 @@ class _MyHomePageState extends State<MyHomePage> {
       pageSize: 240,
       gridCount: 4,
       themeColor: null,
+      successCallback: () {
+        Navigator.of(context, rootNavigator: true).push<dynamic>(
+          MaterialPageRoute<dynamic>(
+              builder: (context) {
+                return TestPage();
+              },
+              fullscreenDialog: true),
+        );
+      },
       pickerTheme: ThemeData.light().copyWith(
         backgroundColor: Colors.white,
         buttonColor: themeColor,
@@ -55,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
         primaryColorDark: Colors.grey[100],
         accentColor: themeColor,
         accentColorBrightness: Brightness.light,
-        canvasColor: Color.fromRGBO(248, 247, 248, 1),
+        canvasColor: const Color.fromRGBO(248, 247, 248, 1),
         scaffoldBackgroundColor: Colors.grey[100],
         bottomAppBarColor: Colors.grey[100],
         cardColor: Colors.grey[100],
