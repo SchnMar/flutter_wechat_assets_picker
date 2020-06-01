@@ -1,9 +1,8 @@
-import 'package:example/test_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
-import 'package:example/color_extension.dart';
+import 'test_page.dart';
 
 const Color themeColor = Color(0xff00bc56);
 
@@ -20,7 +19,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'WeChat Asset Picker Demo',
       theme: ThemeData(
-        primarySwatch: themeColor.swatch,
         cursorColor: themeColor,
       ),
       home: const MyHomePage(),
@@ -77,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
         indicatorColor: themeColor,
         appBarTheme: const AppBarTheme(
           brightness: Brightness.light,
-          elevation: 102.0,
+          elevation: 2.0,
         ),
       ),
       selectedAssets: assets,
