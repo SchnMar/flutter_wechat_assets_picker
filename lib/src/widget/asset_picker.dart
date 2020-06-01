@@ -81,7 +81,6 @@ class AssetPicker extends StatelessWidget {
     TextDelegate textDelegate,
     Curve routeCurve = Curves.easeIn,
     Duration routeDuration = const Duration(milliseconds: 300),
-    Function successCallback,
   }) async {
     if (maxAssets == null || maxAssets < 1) {
       throw ArgumentError('maxAssets must be greater than 1.');
@@ -104,7 +103,6 @@ class AssetPicker extends StatelessWidget {
           requestType: requestType,
           sortPathDelegate: sortPathDelegate,
           routeDuration: routeDuration,
-          successCallback: successCallback,
         );
         final Widget picker = AssetPicker(
           key: key,
@@ -239,6 +237,10 @@ class AssetPicker extends StatelessWidget {
                 height: appBarItemHeight,
                 constraints: BoxConstraints(maxWidth: Screens.width * 0.5),
                 padding: const EdgeInsets.only(left: 12.0, right: 6.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: theme.dividerColor,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -257,6 +259,10 @@ class AssetPicker extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(left: 5.0),
                       child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.dividerColor.withAlpha(150),
+                        ),
                         child: Transform.rotate(
                           angle: provider.isSwitchingPath ? math.pi : 0.0,
                           alignment: Alignment.center,
@@ -478,28 +484,39 @@ class AssetPicker extends StatelessWidget {
   /// 当有资源已选时，点击按钮将把已选资源通过路由返回。
   Widget confirmButton(BuildContext context) => Consumer<AssetPickerProvider>(
         builder: (BuildContext _, AssetPickerProvider provider, Widget __) {
-          return GestureDetector(
-            child: Padding(
-              padding: const EdgeInsets.only(
-                right: 16.0,
-                bottom: 8.0,
-              ),
-              child: Text(
-                Constants.textDelegate.confirm,
-                style: TextStyle(
-                  color: provider.isSelectedNotEmpty
-                      ? Colors.blue
-                      : Colors.grey[600],
-                  fontSize: 17.0,
-                  fontWeight: FontWeight.normal,
-                ),
+          return MaterialButton(
+            minWidth: provider.isSelectedNotEmpty ? 48.0 : 20.0,
+            height: appBarItemHeight,
+            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+            color:
+                provider.isSelectedNotEmpty ? themeColor : theme.dividerColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(3.0),
+            ),
+            elevation: 0.0,
+            disabledElevation: 0.0,
+            focusElevation: 0.0,
+            highlightElevation: 0.0,
+            hoverElevation: 0.0,
+            child: Text(
+              provider.isSelectedNotEmpty && !isSingleAssetMode
+                  ? '${Constants.textDelegate.confirm}'
+                      '(${provider.selectedAssets.length}/${provider.maxAssets})'
+                  : Constants.textDelegate.confirm,
+              style: TextStyle(
+                color: provider.isSelectedNotEmpty
+                    ? Colors.white
+                    : Colors.grey[600],
+                fontSize: 17.0,
+                fontWeight: FontWeight.normal,
               ),
             ),
-            onTap: () {
+            onPressed: () {
               if (provider.isSelectedNotEmpty) {
-                provider.successCallback(context, provider.selectedAssets);
+                Navigator.of(context).pop(provider.selectedAssets);
               }
             },
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           );
         },
       );
@@ -982,6 +999,21 @@ class AssetPicker extends StatelessWidget {
               ),
       );
 
+  /// Custom app bar for the picker.
+  /// 选择器自定义的顶栏
+  FixedAppBar appBar(BuildContext context) => SizedBox(
+    height: 85.0,
+    child: FixedAppBar(
+          backgroundColor: theme.appBarTheme.color,
+          centerTitle: isAppleOS,
+          title: pathEntitySelector,
+          leading: backButton(context),
+          actions:  <Widget>[confirmButton(context),] ,
+          actionsPadding: const EdgeInsets.only(right: 14.0),
+          blurRadius: isAppleOS ? appleOSBlurRadius : 0.0,
+        ),
+  );
+
   /// Layout for Apple OS devices.
   /// 苹果系列设备的选择器布局
   Widget appleOSLayout(BuildContext context) {
@@ -1016,20 +1048,7 @@ class AssetPicker extends StatelessWidget {
             },
           ),
         ),
-        SizedBox(
-          height: 85.0,
-          child: FixedAppBar(
-            backgroundColor: theme.canvasColor,
-            centerTitle: true,
-            title: pathEntitySelector,
-            leading: backButton(context),
-            actions: <Widget>[
-              confirmButton(context),
-            ],
-            actionsPadding: const EdgeInsets.only(right: 14.0),
-            blurRadius: appleOSBlurRadius,
-          ),
-        ),
+        appBar(context),
       ],
     );
   }
@@ -1038,14 +1057,7 @@ class AssetPicker extends StatelessWidget {
   /// Android设备的选择器布局
   Widget androidLayout(BuildContext context) {
     return FixedAppBarWrapper(
-      appBar: FixedAppBar(
-        backgroundColor: theme.canvasColor,
-        centerTitle: false,
-        title: pathEntitySelector,
-        leading: backButton(context),
-        actionsPadding: const EdgeInsets.only(right: 14.0),
-        actions: <Widget>[confirmButton(context)],
-      ),
+      appBar: appBar(context),
       body: Selector<AssetPickerProvider, bool>(
         selector: (BuildContext _, AssetPickerProvider provider) =>
             provider.hasAssetsToDisplay,

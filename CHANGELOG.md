@@ -1,9 +1,18 @@
-# [2.2.0-dev.2]
+# [2.2.0+1]
 
+* Fix preview widget for audio assets in picker viewer.
+
+# [2.2.0]
+
+* Brand new example.
 * Add `SortPathDelegate`.
 * Using zoom page transition for viewer.
 * Slightly add padding to viewer's assets list view.
+* Migrate elevation and color to material rendering.
+* Request thumb only when request type is not audio.
 * Force request title for audio type asset.
+* Expose `AssetType` enum.
+* Fix issue with request type.
 
 # [2.1.0]
 
