@@ -1,3 +1,13 @@
+# [2.2.1]
+
+* Introduce `ColorScheme` for theme details. Fixed #32 .
+* Enhance RTL compatibility.
+* Enlarge select indicator's size. Related to #33 .
+
+# [2.2.0+2]
+
+* Remove path entity properties refresh.
+
 # [2.2.0+1]
 
 * Fix preview widget for audio assets in picker viewer.
