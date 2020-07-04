@@ -508,7 +508,7 @@ class AssetPicker extends StatelessWidget {
                   color: provider.isSelectedNotEmpty
                       ? Colors.blue
                       : Colors.grey[600],
-                  fontSize: 17.0,
+                  fontSize: 18.0,
                   fontWeight: FontWeight.normal,
                 ),
               ),
