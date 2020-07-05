@@ -496,14 +496,14 @@ class AssetPicker extends StatelessWidget {
   /// 当有资源已选时，点击按钮将把已选资源通过路由返回。
   Widget confirmButton(BuildContext context) => Consumer<AssetPickerProvider>(
         builder: (BuildContext _, AssetPickerProvider provider, Widget __) {
-          return GestureDetector(
+          return FlatButton(
             child: Padding(
               padding: const EdgeInsets.only(
-                right: 16.0,
-                bottom: 8.0,
+                right: 8.0,
               ),
               child: Text(
                 Constants.textDelegate.confirm,
+                textAlign: TextAlign.right,
                 style: TextStyle(
                   color: provider.isSelectedNotEmpty
                       ? Colors.blue
@@ -513,7 +513,7 @@ class AssetPicker extends StatelessWidget {
                 ),
               ),
             ),
-            onTap: () {
+            onPressed: () {
               if (provider.isSelectedNotEmpty) {
                 Navigator.of(context).pop(provider.selectedAssets);
               }
