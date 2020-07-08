@@ -47,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
       successCallback: (List<AssetEntity> assets) {
         Navigator.of(context, rootNavigator: true).push<dynamic>(
           MaterialPageRoute<dynamic>(
-              builder: (context) {
+              builder: (BuildContext context) {
                 return TestPage();
               },
               fullscreenDialog: true),

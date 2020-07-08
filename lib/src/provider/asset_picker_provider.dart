@@ -7,7 +7,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
-
 import 'package:wechat_assets_picker/src/constants/constants.dart';
 
 /// [ChangeNotifier] for assets picker.
@@ -23,7 +22,6 @@ class AssetPickerProvider extends ChangeNotifier {
     this.sortPathDelegate = SortPathDelegate.common,
     List<AssetEntity> selectedAssets,
     Duration routeDuration,
-    this.successCallback,
   }) {
     if (selectedAssets?.isNotEmpty ?? false) {
       _selectedAssets = List<AssetEntity>.from(selectedAssets);
@@ -56,8 +54,6 @@ class AssetPickerProvider extends ChangeNotifier {
   /// Delegate to sort asset path entities.
   /// 资源路径排序的实现
   final SortPathDelegate sortPathDelegate;
-
-  final Function successCallback;
 
   /// Clear all fields when dispose.
   /// 销毁时重置所有内容

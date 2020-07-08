@@ -28,6 +28,7 @@ class AssetPicker extends StatelessWidget {
     int gridCount = 4,
     Color themeColor,
     TextDelegate textDelegate,
+    this.successCallback,
   })  : assert(
           provider != null,
           'AssetPickerProvider must be provided and not null.',
@@ -42,6 +43,8 @@ class AssetPicker extends StatelessWidget {
         super(key: key) {
     Constants.textDelegate = textDelegate ?? DefaultTextDelegate();
   }
+
+  final Function successCallback;
 
   /// [ChangeNotifier] for asset picker.
   /// 资源选择器状态保持
@@ -103,7 +106,6 @@ class AssetPicker extends StatelessWidget {
           requestType: requestType,
           sortPathDelegate: sortPathDelegate,
           routeDuration: routeDuration,
-          successCallback: successCallback,
         );
         final Widget picker = AssetPicker(
           key: key,
@@ -112,6 +114,7 @@ class AssetPicker extends StatelessWidget {
           textDelegate: textDelegate,
           themeColor: themeColor,
           pickerTheme: pickerTheme,
+          successCallback: successCallback,
         );
         final List<AssetEntity> result = await Navigator.of(
           context,
@@ -515,7 +518,7 @@ class AssetPicker extends StatelessWidget {
             ),
             onPressed: () {
               if (provider.isSelectedNotEmpty) {
-                provider.successCallback(context, provider.selectedAssets);
+                successCallback(provider.selectedAssets);
               }
             },
           );
