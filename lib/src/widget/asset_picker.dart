@@ -66,6 +66,60 @@ class AssetPicker extends StatelessWidget {
   /// 通常情况下微信选择器使用的是暗色（暗色背景）的主题，但某些情况下开发者需要亮色或自定义主题。
   final ThemeData pickerTheme;
 
+  static Widget createAssetPicker(
+    BuildContext context, {
+    Key key,
+    int maxAssets = 9,
+    int pageSize = 320,
+    int pathThumbSize = 200,
+    int gridCount = 4,
+    RequestType requestType = RequestType.image,
+    List<AssetEntity> selectedAssets,
+    Color themeColor,
+    ThemeData pickerTheme,
+    SortPathDelegate sortPathDelegate,
+    TextDelegate textDelegate,
+    Curve routeCurve = Curves.easeIn,
+    Duration routeDuration = const Duration(milliseconds: 300),
+    Function successCallback,
+  }) {
+    if (maxAssets == null || maxAssets < 1) {
+      throw ArgumentError('maxAssets must be greater than 1.');
+    }
+    if (pageSize != null && pageSize % gridCount != 0) {
+      throw ArgumentError('pageSize must be a multiple of gridCount.');
+    }
+    if (pickerTheme != null && themeColor != null) {
+      throw ArgumentError(
+          'Theme and theme color cannot be set at the same time.');
+    }
+    try {
+      final AssetPickerProvider provider = AssetPickerProvider(
+        maxAssets: maxAssets,
+        pageSize: pageSize,
+        pathThumbSize: pathThumbSize,
+        selectedAssets: selectedAssets,
+        requestType: requestType,
+        sortPathDelegate: sortPathDelegate,
+        routeDuration: routeDuration,
+      );
+      final Widget picker = AssetPicker(
+        key: key,
+        provider: provider,
+        gridCount: gridCount,
+        textDelegate: textDelegate,
+        themeColor: themeColor,
+        pickerTheme: pickerTheme,
+        successCallback: successCallback,
+      );
+
+      return picker;
+    } catch (e) {
+      realDebugPrint('Error when calling assets picker: $e');
+      return null;
+    }
+  }
+
   /// Static method to push with navigator.
   /// 跳转至选择器的静态方法
   static Future<List<AssetEntity>> pickAssets(
