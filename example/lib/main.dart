@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
-import 'package:wechat_assets_picker_demo/test_page2.dart';
 
 import 'test_page.dart';
 
@@ -175,14 +174,6 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: <Widget>[
           textField,
-          MaterialButton(
-            child: const Text('test'),
-            onPressed: () => Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute<void>(
-                builder: (_) => TestPage2(),
-              ),
-            ),
-          ),
           AnimatedContainer(
             duration: kThemeAnimationDuration,
             curve: Curves.easeInOut,
