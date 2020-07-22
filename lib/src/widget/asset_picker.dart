@@ -506,7 +506,7 @@ class AssetPicker extends StatelessWidget {
           return FlatButton(
             child: Padding(
               padding: const EdgeInsets.only(
-                right: 8.0,
+                left: 16.0,
               ),
               child: Text(
                 Constants.textDelegate.confirm,
