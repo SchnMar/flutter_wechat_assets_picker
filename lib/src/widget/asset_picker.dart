@@ -776,7 +776,7 @@ class AssetPicker extends StatelessWidget {
             return GridView.builder(
               padding: isAppleOS
                   ? EdgeInsets.only(
-                      top: Screens.topSafeHeight + kToolbarHeight,
+                      top: Screens.topSafeHeight + 45.0,
                       bottom: bottomActionBarHeight,
                     )
                   : EdgeInsets.zero,
@@ -1052,8 +1052,9 @@ class AssetPicker extends StatelessWidget {
         actions: <Widget>[
           confirmButton(context),
         ],
-        actionsPadding: const EdgeInsets.only(right: 14.0),
+        actionsPadding: const EdgeInsets.only(left: 14.0),
         blurRadius: isAppleOS ? appleOSBlurRadius : 0.0,
+        height: 45.0,
       );
 
   /// Layout for Apple OS devices.

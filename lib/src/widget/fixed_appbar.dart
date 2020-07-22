@@ -119,7 +119,11 @@ class FixedAppBar extends StatelessWidget {
               height: kToolbarHeight,
               child: Padding(
                 padding: actionsPadding ?? EdgeInsets.zero,
-                child: Row(mainAxisSize: MainAxisSize.min, children: actions),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: actions,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                ),
               ),
             ),
         ],
