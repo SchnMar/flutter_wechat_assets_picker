@@ -45,6 +45,8 @@ class _MyHomePageState extends State<MyHomePage> {
       gridCount: 4,
       themeColor: null,
       successCallback: (List<AssetEntity> assets) {
+        Navigator.pop(context);
+
         Navigator.of(context, rootNavigator: true).push<dynamic>(
           MaterialPageRoute<dynamic>(
               builder: (BuildContext context) {
@@ -52,6 +54,9 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               fullscreenDialog: true),
         );
+      },
+      closeCallback: () {
+        Navigator.pop(context);
       },
       pickerTheme: ThemeData.light().copyWith(
         backgroundColor: Colors.white,
