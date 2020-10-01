@@ -1,5 +1,5 @@
 ///
-/// [Author] Alex (https://github.com/AlexVincent525)
+/// [Author] Alex (https://github.com/Alex525)
 /// [Date] 2020/3/31 15:39
 ///
 import 'dart:io';
@@ -7,10 +7,10 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:extended_image/extended_image.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
@@ -24,10 +24,14 @@ class AssetPicker extends StatelessWidget {
   AssetPicker({
     Key key,
     @required this.provider,
-    this.pickerTheme,
     int gridCount = 4,
     Color themeColor,
-    TextDelegate textDelegate,
+    AssetsPickerTextDelegate textDelegate,
+    this.pickerTheme,
+    this.previewThumbSize,
+    this.specialPickerType,
+    this.customItemPosition = CustomItemPosition.none,
+    this.customItemBuilder,
     this.successCallback,
     this.closeCallback,
   })  : assert(
@@ -42,7 +46,7 @@ class AssetPicker extends StatelessWidget {
         themeColor =
             pickerTheme?.colorScheme?.secondary ?? themeColor ?? C.themeColor,
         super(key: key) {
-    Constants.textDelegate = textDelegate ?? DefaultTextDelegate();
+    Constants.textDelegate = textDelegate ?? DefaultAssetsPickerTextDelegate();
   }
 
   final Function successCallback;
@@ -52,52 +56,111 @@ class AssetPicker extends StatelessWidget {
   /// 资源选择器状态保持
   final AssetPickerProvider provider;
 
-  /// Assets count for picker.
+  /// Assets count for the picker.
   /// 资源网格数
   final int gridCount;
 
-  /// Main color for picker.
+  /// Main color for the picker.
   /// 选择器的主题色
   final Color themeColor;
 
   /// Theme for the picker.
   /// 选择器的主题
   ///
-  /// Usually the WeChat uses the dark version (dark background color) for the picker,
-  /// but some developer wants a light theme version for some reasons.
+  /// Usually the WeChat uses the dark version (dark background color)
+  /// for the picker. However, some others want a light or a custom version.
+  ///
   /// 通常情况下微信选择器使用的是暗色（暗色背景）的主题，但某些情况下开发者需要亮色或自定义主题。
   final ThemeData pickerTheme;
 
-  /// Static method to push with navigator.
+  /// Thumb size for the preview of images in the viewer.
+  /// 预览时图片的缩略图大小
+  ///
+  /// This only works on images since other types does not have request
+  /// for thumb data. The speed of preview can be raised by reducing it.
+  ///
+  /// 该参数仅生效于图片类型的资源，因为其他资源不需要请求缩略图数据。
+  /// 预览图片的速度可以通过适当降低它的数值来提升。
+  ///
+  /// Default is `null`, which will request the origin data.
+  /// 默认为空，即读取原图。
+  final List<int> previewThumbSize;
+
+  /// The current special picker type for the picker.
+  /// 当前特殊选择类型
+  ///
+  /// There're several types which are special:
+  /// * [SpecialPickerType.wechatMoment] When user selected video, no more images
+  /// can be selected.
+  ///
+  /// 这里包含一些特殊选择类型：
+  /// * [SpecialPickerType.wechatMoment] 微信朋友圈模式。当用户选择了视频，将不能选择图片。
+  final SpecialPickerType specialPickerType;
+
+  /// The widget builder for the custom item.
+  /// 自定义item的构造方法
+  final WidgetBuilder customItemBuilder;
+
+  /// Allow users set custom item in the picker with several positions.
+  /// 允许用户在选择器中添加一个自定义item，并指定位置。
+  final CustomItemPosition customItemPosition;
+
+  /// Static method to push with the navigator.
   /// 跳转至选择器的静态方法
   static Future<List<AssetEntity>> pickAssets(
     BuildContext context, {
-    Key key,
     int maxAssets = 9,
     int pageSize = 320,
     int pathThumbSize = 200,
     int gridCount = 4,
-    RequestType requestType = RequestType.image,
+    List<int> previewThumbSize,
+    RequestType requestType,
+    SpecialPickerType specialPickerType,
     List<AssetEntity> selectedAssets,
     Color themeColor,
     ThemeData pickerTheme,
     SortPathDelegate sortPathDelegate,
-    TextDelegate textDelegate,
+    AssetsPickerTextDelegate textDelegate,
+    FilterOptionGroup filterOptions,
+    WidgetBuilder customItemBuilder,
+    CustomItemPosition customItemPosition = CustomItemPosition.none,
     Curve routeCurve = Curves.easeIn,
-    Duration routeDuration = const Duration(milliseconds: 300),
-    Function successCallback,
-    Function closeCallback,
+    Duration routeDuration = const Duration(milliseconds: 300),    Function successCallback,
+        Function closeCallback,
   }) async {
     if (maxAssets == null || maxAssets < 1) {
-      throw ArgumentError('maxAssets must be greater than 1.');
+      throw ArgumentError(
+        'maxAssets must be greater than 1.',
+      );
     }
     if (pageSize != null && pageSize % gridCount != 0) {
-      throw ArgumentError('pageSize must be a multiple of gridCount.');
+      throw ArgumentError(
+        'pageSize must be a multiple of gridCount.',
+      );
     }
     if (pickerTheme != null && themeColor != null) {
       throw ArgumentError(
-          'Theme and theme color cannot be set at the same time.');
+        'Theme and theme color cannot be set at the same time.',
+      );
     }
+    if (specialPickerType != null && requestType != null) {
+      throw ArgumentError(
+        'specialPickerType and requestType cannot be set at the same time.',
+      );
+    } else {
+      if (specialPickerType == SpecialPickerType.wechatMoment) {
+        requestType = RequestType.common;
+      } else {
+        requestType ??= RequestType.image;
+      }
+    }
+    if ((customItemBuilder == null &&
+            customItemPosition != CustomItemPosition.none) ||
+        (customItemBuilder != null &&
+            customItemPosition == CustomItemPosition.none)) {
+      throw ArgumentError('Custom item didn\'t set properly.');
+    }
+
     try {
       final bool isPermissionGranted = await PhotoManager.requestPermission();
       if (isPermissionGranted) {
@@ -108,10 +171,11 @@ class AssetPicker extends StatelessWidget {
           selectedAssets: selectedAssets,
           requestType: requestType,
           sortPathDelegate: sortPathDelegate,
+          filterOptions: filterOptions,
           routeDuration: routeDuration,
         );
         final Widget picker = AssetPicker(
-          key: key,
+          key: Constants.pickerKey,
           provider: provider,
           gridCount: gridCount,
           textDelegate: textDelegate,
@@ -119,6 +183,10 @@ class AssetPicker extends StatelessWidget {
           pickerTheme: pickerTheme,
           successCallback: successCallback,
           closeCallback: closeCallback,
+          previewThumbSize: previewThumbSize,
+          specialPickerType: specialPickerType,
+          customItemPosition: customItemPosition,
+          customItemBuilder: customItemBuilder,
         );
         final List<AssetEntity> result = await Navigator.of(
           context,
@@ -151,7 +219,7 @@ class AssetPicker extends StatelessWidget {
     }
   }
 
-  /// Unregister observe callback with assets changes.
+  /// Unregister the observation callback with assets changes.
   /// 取消注册资源（图库）变化的监听回调
   static void unregisterObserve([ValueChanged<MethodCall> callback]) {
     try {
@@ -170,7 +238,7 @@ class AssetPicker extends StatelessWidget {
   /// 选择器是否为单选模式
   bool get isSingleAssetMode => provider.maxAssets == 1;
 
-  /// Space between asset item widget.
+  /// Space between assets item widget.
   /// 资源部件之间的间隔
   double get itemSpacing => 2.0;
 
@@ -236,7 +304,7 @@ class AssetPicker extends StatelessWidget {
         ),
       );
 
-  /// [ThemeData] for picker.
+  /// [ThemeData] for the picker.
   /// 选择器使用的主题
   ThemeData get theme => pickerTheme ?? themeData(themeColor);
 
@@ -260,6 +328,10 @@ class AssetPicker extends StatelessWidget {
                 height: appBarItemHeight,
                 constraints: BoxConstraints(maxWidth: Screens.width * 0.5),
                 padding: const EdgeInsets.only(left: 12.0, right: 6.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: theme.dividerColor,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -277,7 +349,11 @@ class AssetPicker extends StatelessWidget {
                       ),
                     Padding(
                       padding: const EdgeInsets.only(left: 5.0),
-                      child: Container(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: theme.iconTheme.color.withOpacity(0.5),
+                        ),
                         child: Transform.rotate(
                           angle: provider.isSwitchingPath ? math.pi : 0.0,
                           alignment: Alignment.center,
@@ -297,7 +373,7 @@ class AssetPicker extends StatelessWidget {
         ),
       );
 
-  /// Item widget for path entity selector.
+  /// Item widgets for path entity selector.
   /// 路径单独条目选择组件
   Widget pathEntityWidget(AssetPathEntity pathEntity) {
     return Material(
@@ -332,6 +408,7 @@ class AssetPicker extends StatelessWidget {
                       /// The reason that the `thumbData` should be checked at here to see if it is
                       /// null is that even the image file is not exist, the `File` can still
                       /// returned as it exist, which will cause the thumb bytes return null.
+                      ///
                       /// 此处需要检查缩略图为空的原因是：尽管文件可能已经被删除，但通过`File`读取的文件对象
                       /// 仍然存在，使得返回的数据为空。
                       final Uint8List thumbData = pathEntityList[pathEntity];
@@ -403,12 +480,40 @@ class AssetPicker extends StatelessWidget {
     );
   }
 
+  /// A backdrop widget behind the [pathEntityListWidget].
+  /// 在 [pathEntityListWidget] 后面的遮罩层
+  ///
+  /// While the picker is switching path, this will displayed.
+  /// If the user tapped on it, it'll collapse the list widget.
+  ///
+  /// 当选择器正在选择路径时，它会出现。用户点击它时，列表会折叠收起。
+  Widget get pathEntityListBackdrop {
+    return Selector<AssetPickerProvider, bool>(
+      selector: (BuildContext _, AssetPickerProvider provider) =>
+          provider.isSwitchingPath,
+      builder: (BuildContext _, bool isSwitchingPath, Widget __) {
+        return IgnorePointer(
+          ignoring: !isSwitchingPath,
+          child: GestureDetector(
+            onTap: () {
+              _.read<AssetPickerProvider>().isSwitchingPath = false;
+            },
+            child: AnimatedOpacity(
+              duration: switchingPathDuration,
+              opacity: isSwitchingPath ? 1.0 : 0.0,
+              child: Container(color: Colors.black.withOpacity(0.75)),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// List widget for path entities.
   /// 路径选择列表组件
   Widget get pathEntityListWidget {
     final double appBarHeight = 45.0 + Screens.topSafeHeight;
-    final double maxHeight =
-        isAppleOS ? Screens.height - appBarHeight : Screens.height * 0.75;
+    final double maxHeight = Screens.height * 0.825;
     return Selector<AssetPickerProvider, bool>(
       selector: (BuildContext _, AssetPickerProvider provider) =>
           provider.isSwitchingPath,
@@ -426,9 +531,15 @@ class AssetPicker extends StatelessWidget {
             child: Container(
               width: Screens.width,
               height: maxHeight,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-              ), // theme.colorScheme.background),
+              decoration: BoxDecoration(
+                borderRadius: isAppleOS
+                    ? const BorderRadius.only(
+                        bottomLeft: Radius.circular(10.0),
+                        bottomRight: Radius.circular(10.0),
+                      )
+                    : null,
+                color: theme.colorScheme.background,
+              ),
               child: Selector<AssetPickerProvider,
                   Map<AssetPathEntity, Uint8List>>(
                 selector: (BuildContext _, AssetPickerProvider provider) =>
@@ -501,7 +612,8 @@ class AssetPicker extends StatelessWidget {
   /// Confirm button.
   /// 确认按钮
   ///
-  /// It'll pop with [AssetPickerProvider.selectedAssets] when there're any assets were chosen.
+  /// It'll pop with [AssetPickerProvider.selectedAssets] when there're any assets chosen.
+  ///
   /// 当有资源已选时，点击按钮将把已选资源通过路由返回。
   Widget confirmButton(BuildContext context) => Consumer<AssetPickerProvider>(
         builder: (BuildContext _, AssetPickerProvider provider, Widget __) {
@@ -529,6 +641,7 @@ class AssetPicker extends StatelessWidget {
                 Navigator.maybePop(context);
               }
             },
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           );
         },
       );
@@ -570,6 +683,10 @@ class AssetPicker extends StatelessWidget {
                   fontSize: isAppleOS ? 14.0 : 12.0,
                   fontWeight: isAppleOS ? FontWeight.w500 : FontWeight.normal,
                 ),
+                strutStyle: const StrutStyle(
+                  forceStrutHeight: true,
+                  height: 1.0,
+                ),
               ),
             ),
           ),
@@ -609,6 +726,7 @@ class AssetPicker extends StatelessWidget {
   /// Videos often contains various of color in the cover,
   /// so in order to keep the content visible in most cases,
   /// the color of the indicator has been set to [Colors.white].
+  ///
   /// 视频封面通常包含各种颜色，为了保证内容在一般情况下可见，此处
   /// 将指示器的图标和文字设置为 [Colors.white]。
   Widget videoIndicator(AssetEntity asset) {
@@ -626,6 +744,7 @@ class AssetPicker extends StatelessWidget {
           ),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             const Icon(
               Icons.videocam,
@@ -641,6 +760,10 @@ class AssetPicker extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16.0,
+                ),
+                strutStyle: const StrutStyle(
+                  forceStrutHeight: true,
+                  height: 1.4,
                 ),
               ),
             ),
@@ -664,14 +787,19 @@ class AssetPicker extends StatelessWidget {
         final bool selected = selectedAssets.contains(asset);
         return Positioned.fill(
           child: GestureDetector(
-            onTap: () {
-              if (selected) {
-                provider.unSelectAsset(asset);
-              } else {
-                if (isSingleAssetMode) {
-                  provider.selectedAssets.clear();
-                }
-                provider.selectAsset(asset);
+            onTap: () async {
+              final List<AssetEntity> result =
+              await AssetPickerViewer.pushToViewer(
+                context,
+                currentIndex: index,
+                assets: provider.currentAssets,
+                themeData: theme,
+                previewThumbSize: previewThumbSize,
+                specialPickerType:
+                asset.type == AssetType.video ? specialPickerType : null,
+              );
+              if (result != null) {
+                Navigator.of(context).pop(result);
               }
             },
             child: AnimatedContainer(
@@ -680,7 +808,7 @@ class AssetPicker extends StatelessWidget {
                   ? theme.colorScheme.primary.withOpacity(0.45)
                   : Colors.black.withOpacity(0.1),
             ),
-          ), // 点击预览同目录下所有资源
+          ), // 点击预
         );
       },
     );
@@ -732,7 +860,7 @@ class AssetPicker extends StatelessWidget {
                   reverseDuration: switchingPathDuration,
                   child: selected
                       ? isSingleAssetMode
-                          ? Icon(Icons.check, size: 18.0)
+                          ? const Icon(Icons.check, size: 18.0)
                           : Text(
                               '${selectedAssets.indexOf(asset) + 1}',
                               style: TextStyle(
@@ -755,7 +883,7 @@ class AssetPicker extends StatelessWidget {
     );
   }
 
-  /// Item widget when [AssetEntity.thumbData] load failed.
+  /// Item widgets when [AssetEntity.thumbData] load failed.
   /// 资源缩略数据加载失败时使用的部件
   Widget get _failedItem => Center(
         child: Text(
@@ -767,7 +895,7 @@ class AssetPicker extends StatelessWidget {
 
   /// [GridView] for assets under [AssetPickerProvider.currentPathEntity].
   /// 正在查看的目录下的资源网格部件
-  Widget assetsGrid(BuildContext context) => Container(
+  Widget assetsGrid(BuildContext context) => ColoredBox(
         color: theme.canvasColor,
         child: Selector<AssetPickerProvider, List<AssetEntity>>(
           selector: (BuildContext _, AssetPickerProvider provider) =>
@@ -789,39 +917,124 @@ class AssetPicker extends StatelessWidget {
                 mainAxisSpacing: itemSpacing,
                 crossAxisSpacing: itemSpacing,
               ),
-              itemCount: currentAssets.length,
+              itemCount: _assetsGridItemCount(_, currentAssets),
               itemBuilder: (BuildContext _, int index) {
-                if (index == currentAssets.length - gridCount * 3 &&
-                    _.read<AssetPickerProvider>().hasMoreToLoad) {
-                  provider.loadMoreAssets();
-                }
-                final AssetEntity asset = currentAssets.elementAt(index);
-                Widget builder;
-                switch (asset.type) {
-                  case AssetType.audio:
-                    builder = audioItemBuilder(context, index, asset);
-                    break;
-                  case AssetType.image:
-                  case AssetType.video:
-                    builder = imageAndVideoItemBuilder(context, index, asset);
-                    break;
-                  case AssetType.other:
-                    builder = const SizedBox.shrink();
-                    break;
-                }
-                return Stack(
-                  children: <Widget>[
-                    builder,
-                    _selectIndicator(asset),
-                  ],
-                );
+                return _assetGridItemBuilder(_, index, currentAssets);
               },
             );
           },
         ),
       );
 
-  /// Item builder for audio type of asset.
+  /// The function which return items count for the assets' grid.
+  /// 为资源列表提供内容数量计算的方法
+  int _assetsGridItemCount(
+    BuildContext context,
+    List<AssetEntity> currentAssets,
+  ) {
+    final AssetPathEntity currentPath = Provider.of<AssetPickerProvider>(
+      context,
+      listen: false,
+    ).currentPathEntity;
+
+    /// Return actual length if current path is all.
+    /// 如果当前目录是全部内容，则返回实际的内容数量。
+    if (!currentPath.isAll) {
+      return currentAssets.length;
+    }
+    int length;
+    switch (customItemPosition) {
+      case CustomItemPosition.none:
+        length = currentAssets.length;
+        break;
+      case CustomItemPosition.prepend:
+      case CustomItemPosition.append:
+        length = currentAssets.length + 1;
+        break;
+    }
+    return length;
+  }
+
+  /// The item builder for the assets' grid.
+  /// 资源列表项的构建
+  ///
+  /// There're several conditions within this builder:
+  /// * Return [customItemBuilder] while the current path is all and [customItemPosition]
+  ///   is not equal to [CustomItemPosition.none].
+  /// * Return item builder according to the asset's type.
+  ///   * [AssetType.audio] -> [audioItemBuilder]
+  ///   * [AssetType.image], [AssetType.video] -> [imageAndVideoItemBuilder]
+  /// * Load more assets when the index reached at third line counting backwards.
+  ///
+  /// 资源构建有几个条件：
+  /// * 当前路径是全部资源且 [customItemPosition] 不等于 [CustomItemPosition.none] 时，将会通过
+  ///   [customItemBuilder] 构建内容。
+  /// * 根据资源类型返回对应类型的构建：
+  ///   * [AssetType.audio] -> [audioItemBuilder] 音频类型
+  ///   * [AssetType.image], [AssetType.video] -> [imageAndVideoItemBuilder] 图片和视频类型
+  /// * 在索引到达倒数第三列的时候加载更多资源。
+  Widget _assetGridItemBuilder(
+    BuildContext context,
+    int index,
+    List<AssetEntity> currentAssets,
+  ) {
+    final AssetPathEntity currentPath = Provider.of<AssetPickerProvider>(
+      context,
+      listen: false,
+    ).currentPathEntity;
+
+    int currentIndex;
+    switch (customItemPosition) {
+      case CustomItemPosition.none:
+      case CustomItemPosition.append:
+        currentIndex = index;
+        break;
+      case CustomItemPosition.prepend:
+        currentIndex = index - 1;
+        break;
+    }
+    if (!currentPath.isAll) {
+      currentIndex = index;
+    }
+
+    if (index == currentAssets.length - gridCount * 3 &&
+        context.read<AssetPickerProvider>().hasMoreToLoad) {
+      provider.loadMoreAssets();
+    }
+
+    if (currentPath.isAll) {
+      if ((index == currentAssets.length &&
+              customItemPosition == CustomItemPosition.append) ||
+          (index == 0 && customItemPosition == CustomItemPosition.prepend)) {
+        return customItemBuilder(context);
+      }
+    }
+
+    final AssetEntity asset = currentAssets.elementAt(currentIndex);
+    Widget builder;
+    switch (asset.type) {
+      case AssetType.audio:
+        builder = audioItemBuilder(context, currentIndex, asset);
+        break;
+      case AssetType.image:
+      case AssetType.video:
+        builder = imageAndVideoItemBuilder(context, currentIndex, asset);
+        break;
+      case AssetType.other:
+        builder = const SizedBox.shrink();
+        break;
+    }
+    return Stack(
+      children: <Widget>[
+        builder,
+        if (specialPickerType != SpecialPickerType.wechatMoment ||
+            asset.type != AssetType.video)
+          _selectIndicator(asset),
+      ],
+    );
+  }
+
+  /// The item builder for audio type of asset.
   /// 音频资源的部件构建
   Widget audioItemBuilder(
     BuildContext context,
@@ -860,7 +1073,7 @@ class AssetPicker extends StatelessWidget {
     );
   }
 
-  /// Item builder for image and video type of asset.
+  /// The item builder for images and video type of asset.
   /// 图片和视频资源的部件构建
   Widget imageAndVideoItemBuilder(
     BuildContext context,
@@ -877,7 +1090,7 @@ class AssetPicker extends StatelessWidget {
           Widget loader;
           switch (state.extendedImageLoadState) {
             case LoadState.loading:
-              loader = Container(color: const Color(0x10ffffff));
+              loader = const ColoredBox(color: Color(0x10ffffff));
               break;
             case LoadState.completed:
               SpecialImageType type;
@@ -942,6 +1155,7 @@ class AssetPicker extends StatelessWidget {
                     context,
                     currentIndex: 0,
                     assets: provider.selectedAssets,
+                    previewThumbSize: previewThumbSize,
                     selectedAssets: provider.selectedAssets,
                     selectorProvider: provider,
                     themeData: theme,
@@ -1050,10 +1264,8 @@ class AssetPicker extends StatelessWidget {
         centerTitle: isAppleOS,
         title: pathEntitySelector,
         leading: backButton(context),
-        actions: <Widget>[
-          confirmButton(context),
-        ],
-        actionsPadding: const EdgeInsets.only(left: 14.0),
+        actions: !isAppleOS ? <Widget>[confirmButton(context)] : null,
+        actionsPadding: const EdgeInsets.only(right: 14.0),
         blurRadius: isAppleOS ? appleOSBlurRadius : 0.0,
         height: 45.0,
       );
@@ -1081,9 +1293,15 @@ class AssetPicker extends StatelessWidget {
                             child: Stack(
                               children: <Widget>[
                                 Positioned.fill(child: assetsGrid(context)),
+                                if (!isSingleAssetMode || isAppleOS)
+                                  PositionedDirectional(
+                                    bottom: 0.0,
+                                    child: bottomActionBar(context),
+                                  ),
                               ],
                             ),
                           ),
+                          pathEntityListBackdrop,
                           pathEntityListWidget,
                         ],
                       )
@@ -1123,6 +1341,7 @@ class AssetPicker extends StatelessWidget {
                           ],
                         ),
                       ),
+                      pathEntityListBackdrop,
                       pathEntityListWidget,
                     ],
                   )

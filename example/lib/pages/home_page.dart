@@ -1,12 +1,13 @@
 ///
-/// [Author] Alex (https://github.com/AlexVincent525)
+/// [Author] Alex (https://github.com/Alex525)
 /// [Date] 2020-05-31 21:38
 ///
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_common_exports/flutter_common_exports.dart';
 
+import '../constants/extensions.dart';
 import '../constants/resource.dart';
+import '../constants/screens.dart';
 import 'multi_assets_page.dart';
 import 'single_assets_page.dart';
 
@@ -68,7 +69,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
+                const Text(
                   'WeChat Asset Picker',
                   style: TextStyle(
                     fontSize: 18.0,
@@ -112,14 +113,14 @@ class _HomePageState extends State<HomePage> {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: currentIndex,
           onTap: selectIndex,
-          items: <BottomNavigationBarItem>[
+          items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: Icon(Icons.photo_library),
-              title: const Text('Multi'),
+              title: Text('Multi'),
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.photo),
-              title: const Text('Single'),
+              title: Text('Single'),
             ),
           ],
         ),

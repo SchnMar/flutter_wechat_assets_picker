@@ -1,11 +1,12 @@
 ///
-/// [Author] Alex (https://github.com/AlexVincent525)
+/// [Author] Alex (https://github.com/Alex525)
 /// [Date] 2020-05-31 20:21
 ///
 import 'package:flutter/material.dart';
-import 'package:flutter_common_exports/flutter_common_exports.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
+import 'package:wechat_camera_picker/wechat_camera_picker.dart';
 
+import '../constants/extensions.dart';
 import '../constants/picker_model.dart';
 import '../main.dart';
 
@@ -38,7 +39,6 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
               context,
               maxAssets: maxAssetsCount,
               selectedAssets: assets,
-              themeColor: themeColor,
               requestType: RequestType.image,
             );
           },
@@ -55,7 +55,6 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
               context,
               maxAssets: maxAssetsCount,
               selectedAssets: assets,
-              themeColor: themeColor,
               requestType: RequestType.video,
             );
           },
@@ -72,8 +71,43 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
               context,
               maxAssets: maxAssetsCount,
               selectedAssets: assets,
-              themeColor: themeColor,
               requestType: RequestType.audio,
+            );
+          },
+        ),
+        PickMethodModel(
+          icon: '📷',
+          name: 'Pick from camera',
+          description: 'Allow pick asset through camera.',
+          method: (
+            BuildContext context,
+            List<AssetEntity> assets,
+          ) async {
+            return await AssetPicker.pickAssets(
+              context,
+              maxAssets: maxAssetsCount,
+              selectedAssets: assets,
+              requestType: RequestType.common,
+              customItemPosition: CustomItemPosition.prepend,
+              customItemBuilder: (BuildContext context) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () async {
+                    final AssetEntity result =
+                        await CameraPicker.pickFromCamera(
+                      context,
+                      isAllowRecording: true,
+                    );
+                    if (result != null) {
+                      Navigator.of(context)
+                          .pop(<AssetEntity>[...assets, result]);
+                    }
+                  },
+                  child: const Center(
+                    child: Icon(Icons.camera_enhance, size: 42.0),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -89,25 +123,7 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
               context,
               maxAssets: maxAssetsCount,
               selectedAssets: assets,
-              themeColor: themeColor,
               requestType: RequestType.common,
-            );
-          },
-        ),
-        PickMethodModel(
-          icon: '📱',
-          name: 'All picker',
-          description: 'Pick all type of assets.',
-          method: (
-            BuildContext context,
-            List<AssetEntity> assets,
-          ) async {
-            return await AssetPicker.pickAssets(
-              context,
-              maxAssets: maxAssetsCount,
-              selectedAssets: assets,
-              themeColor: themeColor,
-              requestType: RequestType.all,
             );
           },
         ),
@@ -126,8 +142,70 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
               pageSize: 120,
               maxAssets: maxAssetsCount,
               selectedAssets: assets,
-              themeColor: themeColor,
               requestType: RequestType.common,
+            );
+          },
+        ),
+        PickMethodModel(
+          icon: '⏳',
+          name: 'Custom filter options',
+          description: 'Add filter options for the picker.',
+          method: (
+            BuildContext context,
+            List<AssetEntity> assets,
+          ) async {
+            return await AssetPicker.pickAssets(
+              context,
+              maxAssets: maxAssetsCount,
+              selectedAssets: assets,
+              requestType: RequestType.video,
+              filterOptions: FilterOptionGroup()
+                ..setOption(
+                  AssetType.video,
+                  const FilterOption(
+                    durationConstraint: DurationConstraint(
+                      max: Duration(minutes: 1),
+                    ),
+                  ),
+                ),
+            );
+          },
+        ),
+        PickMethodModel(
+          icon: '➕',
+          name: 'Prepend custom item',
+          description: 'An custom item will prepend to the assets grid.',
+          method: (
+            BuildContext context,
+            List<AssetEntity> assets,
+          ) async {
+            return await AssetPicker.pickAssets(
+              context,
+              maxAssets: maxAssetsCount,
+              selectedAssets: assets,
+              requestType: RequestType.common,
+              customItemPosition: CustomItemPosition.prepend,
+              customItemBuilder: (BuildContext context) {
+                return const Center(child: Text('Custom Widget'));
+              },
+            );
+          },
+        ),
+        PickMethodModel(
+          icon: '🎚',
+          name: 'Custom image preview thumb size',
+          description:
+              'You can reduce the thumb size in order to get more quickly load speed.',
+          method: (
+            BuildContext context,
+            List<AssetEntity> assets,
+          ) async {
+            return await AssetPicker.pickAssets(
+              context,
+              maxAssets: maxAssetsCount,
+              selectedAssets: assets,
+              requestType: RequestType.image,
+              previewThumbSize: const <int>[300, 300],
             );
           },
         ),
@@ -201,10 +279,12 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
                 children: <Widget>[
                   Text(
                     model.name,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     model.description,
@@ -215,7 +295,7 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right,
               color: Colors.grey,
             ),
@@ -226,10 +306,13 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
   }
 
   Widget get methodListView => Expanded(
-        child: ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          itemCount: pickMethods.length,
-          itemBuilder: methodItemBuilder,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10.0),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 10.0),
+            itemCount: pickMethods.length,
+            itemBuilder: methodItemBuilder,
+          ),
         ),
       );
 
@@ -393,13 +476,13 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
                         horizontal: 10.0,
                       ),
                       padding: const EdgeInsets.all(4.0),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.grey,
                       ),
                       child: Text(
                         '${assets.length}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           height: 1.0,
                         ),
@@ -423,7 +506,6 @@ class _MultiAssetsPageState extends State<MultiAssetsPage> {
 
   Widget get selectedAssetsListView => Expanded(
         child: ListView.builder(
-          shrinkWrap: true,
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           scrollDirection: Axis.horizontal,

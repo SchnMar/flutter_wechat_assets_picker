@@ -1,5 +1,5 @@
 ///
-/// [Author] Alex (https://github.com/AlexVincent525)
+/// [Author] Alex (https://github.com/Alex525)
 /// [Date] 2020/4/6 15:07
 ///
 import 'package:flutter/material.dart';
@@ -11,6 +11,7 @@ class ImagePageBuilder extends StatelessWidget {
     Key key,
     this.asset,
     this.state,
+    this.previewThumbSize,
   }) : super(key: key);
 
   /// Asset currently displayed.
@@ -21,13 +22,19 @@ class ImagePageBuilder extends StatelessWidget {
   /// 资源查看器的状态[State]
   final AssetPickerViewerState state;
 
+  final List<int> previewThumbSize;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: state.switchDisplayingDetail,
       child: ExtendedImage(
-        image: AssetEntityImageProvider(asset),
+        image: AssetEntityImageProvider(
+          asset,
+          isOriginal: previewThumbSize == null,
+          thumbSize: previewThumbSize,
+        ),
         fit: BoxFit.contain,
         mode: ExtendedImageMode.gesture,
         onDoubleTap: state.updateAnimation,

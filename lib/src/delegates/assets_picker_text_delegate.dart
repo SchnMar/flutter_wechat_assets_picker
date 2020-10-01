@@ -1,12 +1,12 @@
 ///
-/// [Author] Alex (https://github.com/AlexVincent525)
+/// [Author] Alex (https://github.com/Alex525)
 /// [Date] 2020/4/7 10:25
 ///
 
 /// Text delegate that controls text in widgets.
 /// 控制部件中的文字实现
-abstract class TextDelegate {
-  /// Confirm string for confirm button.
+abstract class AssetsPickerTextDelegate {
+  /// Confirm string for the confirm button.
   /// 确认按钮的字段
   String confirm;
 
@@ -18,7 +18,7 @@ abstract class TextDelegate {
   /// 编辑按钮的字段
   String edit;
 
-  /// Placeholder when there's nothing can displayed in the picker.
+  /// Placeholder when there's nothing can display in the picker.
   /// 选择器没有可显示的内容时的占位字段
   String emptyPlaceHolder;
 
@@ -46,24 +46,25 @@ abstract class TextDelegate {
   /// 选择按钮的字段
   String select;
 
-  /// Un-supported asset type string for asset that belongs to [AssetType.other].
+  /// Un-supported asset type string for assets that belongs to [AssetType.other].
   /// 未支持的资源类型的字段
   String unSupportedAssetType;
 
-  /// This is used in video asset item in picker, in order to display
-  /// the duration of the video or audio type of asset.
+  /// This is used in video asset item in the picker, in order
+  /// to display the duration of the video or audio type of asset.
   /// 该字段用在选择器视频或音频部件上，用于显示视频或音频资源的时长。
   String durationIndicatorBuilder(Duration duration);
 }
 
 /// Default text delegate implements with Chinese.
 /// 中文文字实现
-class DefaultTextDelegate implements TextDelegate {
-  factory DefaultTextDelegate() => _instance;
+class DefaultAssetsPickerTextDelegate implements AssetsPickerTextDelegate {
+  factory DefaultAssetsPickerTextDelegate() => _instance;
 
-  DefaultTextDelegate._internal();
+  DefaultAssetsPickerTextDelegate._internal();
 
-  static final DefaultTextDelegate _instance = DefaultTextDelegate._internal();
+  static final DefaultAssetsPickerTextDelegate _instance =
+      DefaultAssetsPickerTextDelegate._internal();
 
   @override
   String confirm = '确认';
@@ -110,9 +111,9 @@ class DefaultTextDelegate implements TextDelegate {
   }
 }
 
-/// [TextDelegate] implements with English.
+/// [AssetsPickerTextDelegate] implements with English.
 /// 英文文字实现
-class EnglishTextDelegate implements TextDelegate {
+class EnglishTextDelegate implements AssetsPickerTextDelegate {
   factory EnglishTextDelegate() => _instance;
 
   EnglishTextDelegate._internal();

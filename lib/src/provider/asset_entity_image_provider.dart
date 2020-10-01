@@ -1,5 +1,5 @@
 ///
-/// [Author] Alex (https://github.com/AlexVincent525)
+/// [Author] Alex (https://github.com/Alex525)
 /// [Date] 2020/3/20 14:07
 ///
 import 'dart:typed_data';
@@ -8,15 +8,25 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:wechat_assets_picker/src/constants/constants.dart';
 
 @immutable
 class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
-  const AssetEntityImageProvider(
+  AssetEntityImageProvider(
     this.entity, {
     this.scale = 1.0,
-    this.thumbSize = 200,
+    this.thumbSize = Constants.defaultPreviewThumbSize,
     this.isOriginal = true,
-  });
+  }) : assert(
+          isOriginal || thumbSize?.length == 2,
+          'thumbSize must contain and only contain two integers when it\'s not original',
+        ) {
+    if (!isOriginal && thumbSize?.length != 2) {
+      throw ArgumentError(
+        'thumbSize must contain and only contain two integers when it\'s not original',
+      );
+    }
+  }
 
   final AssetEntity entity;
 
@@ -26,7 +36,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
 
   /// Size for thumb data.
   /// 缩略图的大小
-  final int thumbSize;
+  final List<int> thumbSize;
 
   /// Choose if original data or thumb data should be loaded.
   /// 选择载入原数据还是缩略图数据
@@ -71,7 +81,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
         data = await key.entity.originBytes;
       }
     } else {
-      data = await key.entity.thumbDataWithSize(thumbSize, thumbSize);
+      data = await key.entity.thumbDataWithSize(thumbSize[0], thumbSize[1]);
     }
     return decode(data);
   }
@@ -80,7 +90,7 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
   /// 从图片后缀判断图片类型
   ///
   /// ⚠ Not all the system version support read file name from the entity,
-  /// so this method might not working sometime.
+  /// so this method might not work sometime.
   /// 并非所有的系统版本都支持读取文件名，所以该方法有时无法返回正确的type。
   ImageFileType _getType() {
     ImageFileType type;
@@ -116,17 +126,25 @@ class AssetEntityImageProvider extends ImageProvider<AssetEntityImageProvider> {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    final AssetEntityImageProvider typedOther =
-        // ignore: test_types_in_equals
-        other as AssetEntityImageProvider;
-    return entity == typedOther.entity &&
-        scale == typedOther.scale &&
-        thumbSize == typedOther.thumbSize &&
-        isOriginal == typedOther.isOriginal;
+    if (identical(this, other)) {
+      return true;
+    }
+    return entity == other.entity &&
+        scale == other.scale &&
+        thumbSize == other.thumbSize &&
+        isOriginal == other.isOriginal;
   }
 
   @override
-  int get hashCode => hashValues(entity, scale, isOriginal);
+  int get hashCode {
+    return hashValues(
+      entity,
+      scale,
+      thumbSize?.elementAt(0) ?? 0,
+      thumbSize?.elementAt(1) ?? 0,
+      isOriginal,
+    );
+  }
 }
 
 enum ImageFileType { jpg, png, gif, tiff, heic, other }
