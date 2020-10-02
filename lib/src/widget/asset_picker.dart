@@ -125,8 +125,9 @@ class AssetPicker extends StatelessWidget {
     WidgetBuilder customItemBuilder,
     CustomItemPosition customItemPosition = CustomItemPosition.none,
     Curve routeCurve = Curves.easeIn,
-    Duration routeDuration = const Duration(milliseconds: 300),    Function successCallback,
-        Function closeCallback,
+    Duration routeDuration = const Duration(milliseconds: 300),
+    Function successCallback,
+    Function closeCallback,
   }) async {
     if (maxAssets == null || maxAssets < 1) {
       throw ArgumentError(
@@ -522,7 +523,9 @@ class AssetPicker extends StatelessWidget {
           duration: switchingPathDuration,
           curve: switchingPathCurve,
           top: isAppleOS
-              ? !isSwitchingPath ? -maxHeight : appBarHeight
+              ? !isSwitchingPath
+                  ? -maxHeight
+                  : appBarHeight
               : -(!isSwitchingPath ? maxHeight : 1.0),
           child: AnimatedOpacity(
             duration: switchingPathDuration,
@@ -787,19 +790,14 @@ class AssetPicker extends StatelessWidget {
         final bool selected = selectedAssets.contains(asset);
         return Positioned.fill(
           child: GestureDetector(
-            onTap: () async {
-              final List<AssetEntity> result =
-              await AssetPickerViewer.pushToViewer(
-                context,
-                currentIndex: index,
-                assets: provider.currentAssets,
-                themeData: theme,
-                previewThumbSize: previewThumbSize,
-                specialPickerType:
-                asset.type == AssetType.video ? specialPickerType : null,
-              );
-              if (result != null) {
-                Navigator.of(context).pop(result);
+            onTap: () {
+              if (selected) {
+                provider.unSelectAsset(asset);
+              } else {
+                if (isSingleAssetMode) {
+                  provider.selectedAssets.clear();
+                }
+                provider.selectAsset(asset);
               }
             },
             child: AnimatedContainer(
@@ -1241,7 +1239,7 @@ class AssetPicker extends StatelessWidget {
                   margin: isAppleOS
                       ? const EdgeInsets.symmetric(horizontal: 20.0)
                       : null,
-                  child: IntrinsicWidth(
+                  child: const IntrinsicWidth(
                     child: Center(
                       child: Icon(Icons.close),
                     ),
@@ -1264,7 +1262,7 @@ class AssetPicker extends StatelessWidget {
         centerTitle: isAppleOS,
         title: pathEntitySelector,
         leading: backButton(context),
-        actions: !isAppleOS ? <Widget>[confirmButton(context)] : null,
+        actions: <Widget>[confirmButton(context)],
         actionsPadding: const EdgeInsets.only(right: 14.0),
         blurRadius: isAppleOS ? appleOSBlurRadius : 0.0,
         height: 45.0,
