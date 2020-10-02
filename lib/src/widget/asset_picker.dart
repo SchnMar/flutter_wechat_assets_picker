@@ -1291,11 +1291,6 @@ class AssetPicker extends StatelessWidget {
                             child: Stack(
                               children: <Widget>[
                                 Positioned.fill(child: assetsGrid(context)),
-                                if (!isSingleAssetMode || isAppleOS)
-                                  PositionedDirectional(
-                                    bottom: 0.0,
-                                    child: bottomActionBar(context),
-                                  ),
                               ],
                             ),
                           ),
