@@ -541,7 +541,7 @@ class AssetPicker extends StatelessWidget {
                         bottomRight: Radius.circular(10.0),
                       )
                     : null,
-                color: Colors.white,
+                color: theme.primaryColor,
               ),
               child: Selector<AssetPickerProvider,
                   Map<AssetPathEntity, Uint8List>>(
