@@ -467,7 +467,11 @@ class AssetPicker extends StatelessWidget {
                   if (currentPathEntity == pathEntity) {
                     return AspectRatio(
                       aspectRatio: 1.0,
-                      child: Icon(Icons.check, color: themeColor, size: 26.0),
+                      child: Icon(
+                        Icons.check,
+                        color: theme.buttonColor,
+                        size: 26.0,
+                      ),
                     );
                   } else {
                     return const SizedBox.shrink();
